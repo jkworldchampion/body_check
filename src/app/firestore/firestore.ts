@@ -1,3 +1,4 @@
+//firestore 등록
 import firebase from './firebase';
 import {getFirestore} from 'firebase/firestore';
 
