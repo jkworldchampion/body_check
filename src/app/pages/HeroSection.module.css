@@ -1,0 +1,42 @@
+/* app/components/HeroSection.module.css */
+
+.heroSection {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2rem;
+}
+
+.text {
+    max-width: 50%;
+}
+
+h1 {
+    font-size: 3rem;
+    font-weight: bold;
+}
+
+p {
+    font-size: 1.25rem;
+}
+
+button {
+    margin-top: 1rem;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    border: 1px solid #000;
+    background: none;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.3s, color 0.3s; /* 부드러운 색상 전환 효과 */
+}
+
+button:hover {
+    background-color: #000;
+    color: #fff;
+}
+
+button:active {
+    background-color: #333;
+    color: #fff;
+}
