@@ -11,12 +11,21 @@ export default function GraphSection() {
                 </p>
             </div>
             <div className={styles.imageContainer}>
-                <div className={styles.imageBackground}></div>
-                <div className={styles.image}>
+                <img
+                    src="/images/computer.png"
+                    alt="컴퓨터 프레임"
+                    className={styles.computerImage}
+                />
+                <div className={styles.graphWrapper}>
                     <img
-                        src="/images/computer.png"
-                        alt="컴퓨터 프레임"
-                        className={styles.image}
+                        src="/images/graph.png"
+                        alt="그래프 이미지"
+                        className={styles.graphImage}
+                    />
+                    <img
+                        src="/images/secondgraph.png"
+                        alt="그래프 이미지"
+                        className={styles.graphImage}
                     />
                 </div>
             </div>
