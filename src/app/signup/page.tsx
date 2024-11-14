@@ -1,86 +1,59 @@
-// src/app/signup/page.tsx
-'use client'
-import React, { FC } from 'react';
-import { useSignupHandlers } from '../utils/signupUtils';
-import styles from './Signup.module.css';
+// src/app/signup/personal/page.tsx
+"use client";
 
-const Signup: FC = () => {
+import React from "react";
+import useSignupStore from "@/store/useSignupStore";
+import styles from "./Signup.module.css";
+import { useRouter } from "next/navigation";
+import {
+    handleInputChange,
+    handleIdCheck,
+    handleSignup,
+    isFormValid
+} from "../utils/signingupUtils";
+import LogoText from "@/app/componenets/logoText";
+
+export default function Signup() {
+    const router = useRouter();
     const {
-        states: {
-            email, id, password, confirmPassword, name, gender, address,
-            error, message, isEmailVerified, isIdUnique, isPasswordValid, isSignupComplete, isFormComplete
-        },
-        handlers: {
-            setEmail, setId, setConfirmPassword, setName, setGender, setAddress,
-            handleIdCheck, handleSendVerificationEmail, handlePasswordChange, handleCompleteSignup
-        }
-    } = useSignupHandlers();
-
-    if (error) {
-        alert(error);
-    }
-    if (message) {
-        alert(message);
-    }
-
-    if (isSignupComplete) {
-        return (
-            <div className={styles.welcomeContainer}>
-                <h1 className={styles.welcomeTitle}>WELCOME</h1>
-                <h2 className={styles.welcomeSubtitle}>BODY : CHECK</h2>
-                <p className={styles.welcomeMessage}>회원가입이 완료되었습니다.</p>
-            </div>
-        );
-    }
+        id,
+        password,
+        confirmPassword,
+        name,
+        gender,
+        address,
+        isIdUnique,
+        isSignupComplete,
+        passwordError,
+        confirmPasswordError
+    } = useSignupStore();
 
     return (
         <div className={styles.container}>
-            <h1 className={styles.title}>BODY : CHECK</h1>
+            <LogoText text={"BODY : CHECK"} />
             <h2 className={styles.subtitle}>회원가입</h2>
             <hr className={styles.line} />
 
-            <form className={styles.form} onSubmit={handleCompleteSignup}>
-                <div className={styles.field}>
-                    <label className={styles.labelText}>*이메일</label>
-                    <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                        disabled={isEmailVerified}
-                        className={styles.input}
-                        placeholder="이메일을 입력 후 인증을 완료해주세요."
-                    />
-                    <button
-                        type="button"
-                        onClick={handleSendVerificationEmail}
-                        className={`${styles.button} ${isEmailVerified ? styles.disabled : ''}`}
-                        disabled={isEmailVerified}  // 인증이 완료되면 비활성화
-                    >
-                        인증번호 요청
-                    </button>
-                    {isEmailVerified && <p className={styles.verified}>인증이 완료되었습니다!</p>}
-                </div>
-
+            <form className={styles.form} onSubmit={(e) => handleSignup(e, router)}>
                 <div className={styles.field}>
                     <label className={styles.labelText}>*아이디</label>
                     <input
                         type="text"
                         value={id}
-                        onChange={(e) => setId(e.target.value)}
+                        onChange={(e) => handleInputChange("id", e.target.value)}
                         required
                         className={styles.input}
-                        placeholder="영소문자, 숫자조합으로 입력해주세요"
-                        disabled={!isEmailVerified}
+                        placeholder={'아이디를 입력해주세요'}
                     />
                     <button
                         type="button"
                         onClick={handleIdCheck}
-                        className={`${styles.button} ${!isEmailVerified || isIdUnique ? styles.disabled : ''}`}
-                        disabled={!isEmailVerified || isIdUnique === false}
+                        className={`${styles.button} ${isIdUnique ? styles.disabled : ""}`}
+                        disabled={isIdUnique === true}
                     >
                         중복 확인
                     </button>
+                    {isIdUnique === true && <p className={styles.verified}>아이디 확인 완료!</p>}
                 </div>
 
                 <div className={styles.field}>
@@ -88,12 +61,12 @@ const Signup: FC = () => {
                     <input
                         type="password"
                         value={password}
-                        onChange={(e) => handlePasswordChange(e.target.value)}
+                        onChange={(e) => handleInputChange("password", e.target.value)}
                         required
                         className={styles.input}
-                        placeholder="비밀번호는 숫자만, 6자리 이상 입력해주세요"
-                        disabled={!isEmailVerified}
+                        placeholder={'비밀번호는 영소문자와 숫자 조합으로 8자리 이상 입력해주세요.'}
                     />
+                    {passwordError && <p className={styles.error}>{passwordError}</p>}
                 </div>
 
                 <div className={styles.field}>
@@ -101,11 +74,13 @@ const Signup: FC = () => {
                     <input
                         type="password"
                         value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
                         required
                         className={styles.input}
-                        disabled={!isEmailVerified}
+                        placeholder={'비밀번호 확인'}
+
                     />
+                    {confirmPasswordError && <p className={styles.error}>{confirmPasswordError}</p>}
                 </div>
 
                 <div className={styles.field}>
@@ -113,11 +88,9 @@ const Signup: FC = () => {
                     <input
                         type="text"
                         value={name}
-                        onChange={(e) => setName(e.target.value)}
+                        onChange={(e) => handleInputChange("name", e.target.value)}
                         required
                         className={styles.input}
-                        placeholder="이름을 입력해주세요"
-                        disabled={!isEmailVerified}
                     />
                 </div>
 
@@ -126,17 +99,15 @@ const Signup: FC = () => {
                     <div className={styles.genderButtons}>
                         <button
                             type="button"
-                            onClick={() => setGender("남")}
-                            className={`${styles.genderButton} ${gender === "남" ? styles.selected : ''}`}
-                            disabled={!isEmailVerified}
+                            onClick={() => handleInputChange("gender", "남")}
+                            className={`${styles.genderButton} ${gender === "남" ? styles.selected : ""}`}
                         >
                             남
                         </button>
                         <button
                             type="button"
-                            onClick={() => setGender("여")}
-                            className={`${styles.genderButton} ${gender === "여" ? styles.selected : ''}`}
-                            disabled={!isEmailVerified}
+                            onClick={() => handleInputChange("gender", "여")}
+                            className={`${styles.genderButton} ${gender === "여" ? styles.selected : ""}`}
                         >
                             여
                         </button>
@@ -148,24 +119,20 @@ const Signup: FC = () => {
                     <input
                         type="text"
                         value={address}
-                        onChange={(e) => setAddress(e.target.value)}
+                        onChange={(e) => handleInputChange("address", e.target.value)}
                         required
                         className={styles.input}
-                        placeholder="주소를 입력해주세요"
-                        disabled={!isEmailVerified}
                     />
                 </div>
 
                 <button
                     type="submit"
-                    className={`${styles.submitButton} ${isFormComplete ? styles.active : ''}`}
-                    disabled={!isFormComplete}
+                    className={`${styles.submitButton} ${isSignupComplete ? styles.active : styles.button}`}
+                    disabled={!isFormValid()}
                 >
                     회원가입 완료
                 </button>
             </form>
         </div>
     );
-};
-
-export default Signup;
+}
