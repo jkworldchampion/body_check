@@ -1,11 +1,12 @@
 // src/app/login/page.tsx
-'use client'
+'use client';
 import React, { FC, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { auth, firestore } from '../firestore/firebase';
 import { getDocs, collection, query, where } from 'firebase/firestore';
 import styles from './login.module.css';
 import Link from "next/link";
+import LogoText from "@/app/componenets/logoText";
 
 const Login: FC = () => {
     const [id, setId] = useState('');
@@ -38,12 +39,13 @@ const Login: FC = () => {
 
     return (
         <div className={styles.container}>
-            <h1 className={styles.title}>BODY CHECK</h1>
+            <LogoText text={"BODY : CHECK"} />
             <h2 className={styles.subtitle}>로그인</h2>
+            <hr className={styles.line} />
 
             <form className={styles.form} onSubmit={handleLogin}>
                 <div className={styles.field}>
-                    <label>아이디</label>
+                    <label className={styles.inputlabel}>아이디</label>
                     <input
                         type="text"
                         value={id}
@@ -54,7 +56,7 @@ const Login: FC = () => {
                 </div>
 
                 <div className={styles.field}>
-                    <label>비밀번호</label>
+                    <label className={styles.inputlabel}>비밀번호</label>
                     <input
                         type="password"
                         value={password}
@@ -63,19 +65,34 @@ const Login: FC = () => {
                         className={styles.input}
                     />
                 </div>
+                <hr className={styles.line} />
 
                 <button type="submit" className={styles.loginButton}>
                     로그인
                 </button>
 
                 {error && <p className={styles.error}>{error}</p>}
+                <Link href="/notfound">
+                    <button className={styles.emailButton}>이메일로 로그인</button>
+                </Link>
             </form>
 
-            <hr></hr>
-            <Link href="/signup">
-                <p>서비스가 처음이신가요?</p>
-            </Link>
-            <div></div>
+            <hr />
+
+            <div className={styles.findAccount}>
+                <Link href="/signup">
+                    <p className={styles.firstMeet}>서비스가 처음이신가요?</p>
+                </Link>
+                <section className={styles.rightLinks}>
+                    <Link href="/findAccount">
+                        <p className={styles.firstMeet}>아이디 찾기</p>
+                    </Link>
+                    <span className={styles.firstMeet}>|</span>
+                    <Link href="/findAccount">
+                        <p className={styles.firstMeet}>비밀번호 찾기</p>
+                    </Link>
+                </section>
+            </div>
         </div>
     );
 };
