@@ -4,9 +4,12 @@
 import React from "react";
 import useSignupStore from "@/store/useSignupStore";
 import styles from "../Signup.module.css";
-import { setDoc, getDoc, doc } from "firebase/firestore";
-import { firestore } from "../../firestore/firebase";
 import { useRouter } from "next/navigation";
+import {
+    handleInputChange,
+    handleIdCheck,
+    handleSignup,
+} from "../../utils/signingupUtils";
 
 export default function Signup() {
     const router = useRouter();
@@ -19,59 +22,7 @@ export default function Signup() {
         address,
         isIdUnique,
         isSignupComplete,
-        setField,
     } = useSignupStore();
-
-    // 입력 변경 핸들러
-    const handleInputChange = (field: keyof typeof useSignupStore, value: string) => {
-        setField(field, value);
-    };
-
-    // ID 중복 확인 핸들러
-    const handleIdCheck = async () => {
-        const docRef = doc(firestore, "users", id);
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-            setField("isIdUnique", false);
-            alert("이미 사용 중인 아이디입니다.");
-        } else {
-            setField("isIdUnique", true);
-            alert("아이디 확인 완료!");
-        }
-    };
-
-    // 회원가입 핸들러
-    const handleSignup = async (e: React.FormEvent) => {
-        e.preventDefault();
-
-        if (password !== confirmPassword) {
-            alert("비밀번호가 일치하지 않습니다.");
-            return;
-        }
-
-        if (isIdUnique) {
-            try {
-                // Firestore에 사용자 정보 저장
-                await setDoc(doc(firestore, "users", id), {
-                    id,
-                    name,
-                    gender,
-                    address,
-                    password,
-                });
-
-                setField("isSignupComplete", true);
-                alert("회원가입이 완료되었습니다.");
-                router.push("/login"); // 회원가입 후 로그인 페이지로 이동
-            } catch (error) {
-                console.error("회원가입 실패:", error);
-                alert("회원가입 중 오류가 발생했습니다.");
-            }
-        } else {
-            alert("아이디 중복 확인을 해주세요.");
-        }
-    };
 
     return (
         <div className={styles.container}>
@@ -79,7 +30,7 @@ export default function Signup() {
             <h2 className={styles.subtitle}>회원가입</h2>
             <hr className={styles.line} />
 
-            <form className={styles.form} onSubmit={handleSignup}>
+            <form className={styles.form} onSubmit={(e) => handleSignup(e, router)}>
                 <div className={styles.field}>
                     <label className={styles.labelText}>*아이디</label>
                     <input
