@@ -1,0 +1,46 @@
+.footer {
+    background-color: #000;
+    color: #999;
+    padding: 100px;
+    display: flex;
+
+}
+
+.content {
+    max-width: 1200px;
+    width: 100%;
+    text-align: left;
+
+}
+
+.title {
+    font-size: 1.5rem;
+    color: #fff;
+    margin-bottom: 4rem;
+}
+
+.links {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.link {
+    color: #999;
+    text-decoration: none;
+    margin-right: 0.5rem;
+}
+
+.link:hover {
+    text-decoration: underline;
+}
+
+.separator {
+    color: #999;
+    margin: 0 0.5rem;
+}
+
+.copyright {
+    font-size: 0.875rem;
+    color: #666;
+}

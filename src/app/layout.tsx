@@ -2,8 +2,6 @@
 'use client';
 import "./globals.css";
 import { ReactNode } from "react";
-import { ThemeProvider } from "styled-components";
-import theme from "./styles/theme";
 
 export default function RootLayout({ children }: { children: ReactNode }) {
     return (
@@ -14,9 +12,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <meta name="description" content="Body Check Application" />
         </head>
         <body>
-        <ThemeProvider theme={theme}>
-            {children}
-        </ThemeProvider>
+        {children}
         </body>
         </html>
     );
