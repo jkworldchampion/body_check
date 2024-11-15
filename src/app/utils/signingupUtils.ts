@@ -25,10 +25,27 @@ export const checkIdAvailability = async (id: string): Promise<boolean> => {
 
 // 입력 변경 핸들러
 export const handleInputChange = (field: keyof ReturnType<typeof useSignupStore>, value: string) => {
-    const { setField } = useSignupStore.getState(); // Zustand store의 상태 가져오기
-    setField(field, value);
-};
+    const { setField, password, confirmPassword } = useSignupStore.getState();
 
+    setField(field, value);
+
+    // 비밀번호 유효성 및 확인 일치 검사
+    if (field === "password") {
+        if (!isPasswordValid(value)) {
+            setField("passwordError", "비밀번호는 소문자와 숫자를 포함한 8자리 이상이어야 합니다.");
+        } else {
+            setField("passwordError", null);
+        }
+    }
+
+    if (field === "confirmPassword") {
+        if (!arePasswordsMatching(password, value)) {
+            setField("confirmPasswordError", "비밀번호가 일치하지 않습니다.");
+        } else {
+            setField("confirmPasswordError", null);
+        }
+    }
+};
 // ID 중복 확인 핸들러
 export const handleIdCheck = async () => {
     const { id, setField } = useSignupStore.getState();
@@ -78,4 +95,19 @@ export const handleSignup = async (e: React.FormEvent, router: Router) => {
     } else {
         alert("아이디 중복 확인을 해주세요.");
     }
+};
+// 모든 필드가 유효한지 확인하는 함수
+export const isFormValid = (): "" | false | null | boolean => {
+    const { id, password, confirmPassword, name, gender, address, isIdUnique } = useSignupStore.getState();
+    return (
+        id &&
+        password &&
+        confirmPassword &&
+        name &&
+        gender &&
+        address &&
+        isIdUnique && // 아이디 중복 확인 완료
+        isPasswordValid(password) &&
+        arePasswordsMatching(password, confirmPassword)
+    );
 };
