@@ -1,24 +1,18 @@
-
+'use client';
+import Link from 'next/link';
 import styles from './HeroSection.module.css';
-import Link from "next/link";
-
 
 export default function HeroSection() {
     return (
-        <div className={`section ${styles.heroSection}`}>
-            <div className={styles.text}>
-                <p>체형맞춤형 운동추천</p>
-                <h1>BODY CHECK</h1>
+        <div className={styles.section}>
+            <div className={styles.textContainer}>
+                <p className={styles.tagline}>체형맞춤형 운동추천</p>
+                <h1 className={styles.mainTitle}>BODY : CHECK</h1>
                 <Link href="/login" passHref>
-                    <button className={styles.button}>서비스 시작하기</button>
-
+                    <button className={styles.styledButton}>서비스 시작하기</button>
                 </Link>
             </div>
-            <div>
-            <img src="/images/main.png" alt="logo"/>
-            </div>
-
-
+            <img src="/images/mainImage.png" alt="logo" className={styles.logoImage} />
         </div>
     );
 }
