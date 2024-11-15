@@ -1,0 +1,39 @@
+
+
+.bodySystemSection {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    background-color: #ffffff; /* 배경 색상 */
+    padding: 100px;
+    text-align: center;
+}
+
+.text {
+    max-width: 60%;
+    margin-bottom: 200px;
+}
+
+.text h2 {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+    color: #333;
+}
+
+.text p {
+    font-size: 1.125rem;
+    line-height: 1.6;
+    color: #666;
+}
+
+.image-container img {
+    width: 100%;
+    max-width: 600px;
+
+    height:100%;
+    object-fit: cover;
+    border-radius: 8px;
+}
