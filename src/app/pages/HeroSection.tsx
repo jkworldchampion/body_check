@@ -8,7 +8,7 @@ export default function HeroSection() {
             <div className={styles.textContainer}>
                 <p className={styles.tagline}>체형맞춤형 운동추천</p>
                 <h1 className={styles.mainTitle}>BODY : CHECK</h1>
-                <Link href="/login" passHref>
+                <Link href="/Login" passHref>
                     <button className={styles.styledButton}>서비스 시작하기</button>
                 </Link>
             </div>
