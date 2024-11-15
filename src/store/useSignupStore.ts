@@ -33,4 +33,17 @@ const useSignupStore = create<SignupFormState>((set) => ({
         })),
 }));
 
+
+
+interface VisibilityState {
+    isVisible: boolean;
+    setIsVisible: (visible: boolean) => void;
+}
+
+export const useVisibilityStore = create<VisibilityState>((set) => ({
+    isVisible: false,
+    setIsVisible: (visible) => set({ isVisible: visible }),
+}));
+
+
 export default useSignupStore;
