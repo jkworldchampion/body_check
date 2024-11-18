@@ -22,7 +22,7 @@ const analytics = getAnalytics(app);
 const auth = getAuth(app);
 const firestore = getFirestore(app);
 
-// 이메일 인증 링크 설정
+// 이메일 인증 링크 설정 후에 리다이렉트 할 페이지 인증 설정
 /*
 export const actionCodeSettings = {
     url: 'https://bodycheck-e86de.firebaseapp.com/signup/finish',
@@ -30,10 +30,14 @@ export const actionCodeSettings = {
 };
 */
 
+/*
+
 // 이메일 링크 인증 설정
 export const actionCodeSettings = {
     //url: 'https://bodycheck-e86de.firebaseapp.com/signup',
     url: 'http://localhost:3001/signup',
     handleCodeInApp: true,
 };
+*/
+
 export { app, analytics, auth, firestore };
