@@ -1,5 +1,5 @@
 import { getAuth, createUserWithEmailAndPassword, sendEmailVerification, User } from "firebase/auth";
-import { auth, actionCodeSettings } from './firebase';
+import { auth } from './firebase';
 
 /*
  * 이메일과 비밀번호로 회원가입
@@ -22,6 +22,7 @@ export const signUpWithEmail = async (email: string, password: string, ) => {
  * 이메일 인증 링크 전송
  * @param user Firebase 사용자 객체
  */
+/*
 export const sendVerificationEmail = async (user: User) => {
     try {
         await sendEmailVerification(user, actionCodeSettings);
@@ -31,3 +32,5 @@ export const sendVerificationEmail = async (user: User) => {
         throw error;
     }
 };
+
+*/

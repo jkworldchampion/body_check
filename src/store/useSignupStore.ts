@@ -42,7 +42,7 @@ interface VisibilityState {
 
 export const useVisibilityStore = create<VisibilityState>((set) => ({
     isVisible: false,
-    setIsVisible: (visible) => set({ isVisible: visible }),
+    set IsVisible: (visible) => set({ isVisible: visible }),
 }));
 
 
