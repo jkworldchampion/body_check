@@ -1,6 +1,6 @@
 // src/firestore/firebase.ts
 import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
+import { getAnalytics, isSupported} from "firebase/analytics";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
@@ -18,7 +18,7 @@ const firebaseConfig = {
 
 // Firebase 초기화
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+//const analytics = getAnalytics(app);
 const auth = getAuth(app);
 const firestore = getFirestore(app);
 
@@ -39,5 +39,23 @@ export const actionCodeSettings = {
     handleCodeInApp: true,
 };
 */
+
+// Analytics 초기화 (브라우저 환경에서만)
+
+// @ts-ignore
+let analytics: ReturnType<typeof getAnalytics> | null = null;
+
+if (typeof window !== "undefined") {
+    // 브라우저 환경인지 확인
+    isSupported().then((supported) => {
+        if (supported) {
+            analytics = getAnalytics(app);
+            console.log("firebae 오류.");
+        } else {
+            console.warn("Firebase Analytics 오류.");
+        }
+    });
+}
+
 
 export { app, analytics, auth, firestore };

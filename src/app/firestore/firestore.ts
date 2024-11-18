@@ -14,11 +14,11 @@ export const getUserData = async (userId: string) => {
         if (userSnapshot.exists()) {
             return userSnapshot.data();
         } else {
-            console.log("No such document!");
+            console.log("정보없음!");
             return null;
         }
     } catch (error) {
-        console.error("Error getting document:", error);
+        console.error("에러 표시", error);
         throw error;
     }
 };
