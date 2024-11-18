@@ -74,4 +74,50 @@ export const addUserData = async (userId: string, data: any) => {
         throw error;
     }
 };
+
+/**
+ * Firestore에 이미지 URL 저장
+ * @param userId 유저의 고유 ID
+ * @param imageUrl 저장할 이미지 URL
+ */
+export const saveImageUrl = async (userId: string, imageUrl: string) => {
+    try {
+        const imagesRef = collection(firestore, "images");
+        await addDoc(imagesRef, {
+            userId,
+            imageUrl,
+            uploadedAt: new Date().toISOString(), // 업로드 시간 기록
+        });
+        console.log("이미지 URL 저장.");
+    } catch (error) {
+        console.error("이미지 URL 저장하다가 실패..:", error);
+        throw error;
+    }
+};
+
+/**
+ * Firestore에서 특정 유저의 이미지 URL 조회
+ * @param userId 유저의 고유 ID
+ * @returns 이미지 URL 목록
+ */
+export const getUserImages = async (userId: string): Promise<string[]> => {
+    try {
+        const imagesRef = collection(firestore, "images");
+        const q = query(imagesRef, where("userId", "==", userId));
+        const querySnapshot = await getDocs(q);
+
+        const imageUrls: string[] = [];
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            if (data.imageUrl) {
+                imageUrls.push(data.imageUrl);
+            }
+        });
+
+        return imageUrls;
+    } catch (error) {
+        console.error("에러:", error);
+        throw error;
+    }
+};
 export { firestore };
