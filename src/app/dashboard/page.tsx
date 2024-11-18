@@ -5,6 +5,7 @@ import { firestore } from '@/app/firestore/firebase';
 import withAuth from '../hoc/withAuth';
 import useAuthStore from '@/store/useAuthStore';
 
+
 const DashboardPage = () => {
     const userId = useAuthStore((state) => state.userId); // Zustand에서 로그인된 사용자 ID 가져오기
     const [userName, setUserName] = useState<string | null>(null); // 사용자 이름 상태
