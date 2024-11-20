@@ -8,25 +8,41 @@ export const uploadImageToCloudinary = (
     options: CloudinaryUploadOptions,
     onSuccess: (url: string) => void,
     onError?: (error: any) => void
-) => {
-    const widget = window.cloudinary.createUploadWidget(
-        {
-            cloudName: options.cloudName,
-            uploadPreset: options.uploadPreset,
-            sources: options.sources,
-        },
-        (error: any, result: any) => {
-            if (error) {
-                console.error("Cloudinary 업로드 오류:", error);
-                if (onError) onError(error);
-            }
-
-            if (result && result.event === "success") {
-                console.log("Cloudinary 업로드 성공:", result.info.secure_url);
-                onSuccess(result.info.secure_url);
-            }
+): Promise<void> => {
+    return new Promise((resolve, reject) => {
+        // Cloudinary 스크립트가 로드되었는지 확인
+        if (!window.cloudinary) {
+            const error = new Error('Cloudinary script not loaded');
+            if (onError) onError(error);
+            reject(error);
+            return;
         }
-    );
 
-    widget.open(); // 업로드 위젯 열기
+        const widget = window.cloudinary.createUploadWidget(
+            {
+                cloudName: options.cloudName,
+                uploadPreset: options.uploadPreset,
+                sources: options.sources,
+                multiple: false,
+                maxFiles: 1,
+            },
+            (error: any, result: any) => {
+                if (error) {
+                    console.error("Cloudinary 업로드 오류:", error);
+                    if (onError) onError(error);
+                    reject(error);
+                    return;
+                }
+
+                if (result && result.event === "success") {
+                    const url = result.info.secure_url;
+                    console.log("Cloudinary 업로드 성공:", url);
+                    onSuccess(url);
+                    resolve();
+                }
+            }
+        );
+
+        widget.open();
+    });
 };

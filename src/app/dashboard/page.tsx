@@ -47,7 +47,7 @@ export default function Dashboard() {
                 uploadedAt: new Date().toISOString(),
             });
             console.log("이미지가 성공적으로 저장되었습니다.");
-            fetchUserImages(); // 이미지 저장 후 갱신
+            await fetchUserImages(); // 이미지 저장 후 갱신
         } catch (error) {
             console.error("이미지 URL 저장 중 오류 발생:", error);
         }
