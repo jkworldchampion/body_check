@@ -65,7 +65,7 @@ const Login: FC = () => {
                         type="password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        required
+                        required autoComplete="current-password"
                         className={styles.input}
                     />
                 </div>
