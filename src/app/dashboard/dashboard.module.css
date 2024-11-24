@@ -1,0 +1,25 @@
+
+.dashboard {
+    display: flex;
+    flex-direction: row;
+    position: relative;
+    overflow-x: hidden;
+}
+
+.mainContent {
+    flex: 1;
+    padding: 20px;
+    transition: margin-left 0.3s ease-in-out;
+}
+
+
+.mainContent.shifted {
+    margin-left: 300px;
+}
+
+
+@media (max-width: 768px) {
+    .mainContent.shifted {
+        margin-left: 0;
+    }
+}
