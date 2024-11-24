@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import DashboardLayout from "@/app/componenets/dashboardLayout";
 import { firestore } from "@/app/firestore/firebase";
 import { doc, getDoc, setDoc, collection, query, where, getDocs } from "firebase/firestore";
 import HandleUpload from "@/app/utils/handleImage";
-import Header from "../componenets/header";
 import useAuthStore from "@/store/useAuthStore";
 import useImageStore from "@/store/imageStore";
+import UseWorkout from "@/app/componenets/useWorkout";
 
 export default function Dashboard() {
     const userId = useAuthStore((state) => state.userId); // Zustand에서 로그인된 사용자 ID 가져오기
@@ -88,31 +89,30 @@ export default function Dashboard() {
     if (!userId) return <p>로딩 중...</p>;
 
     return (
-        <div>
-            <Header />
+        <DashboardLayout>
+            <div className="p-4">
+                <h1>안녕하세요 {userName || "User"} 님!</h1>
+                <p>오늘도 운동하러 오셨군요!</p>
 
-            <h1>안녕하세요 {userName || "User"} 님!</h1>
-            <p>오늘도 운동하러 오셨군요!</p>
+                <HandleUpload />
+                <UseWorkout userId={userId} />
 
-            <HandleUpload />
-
-
-
-            {userImages.length > 0 && (
-                <div style={{ marginTop: "20px" }}>
-                    <h3>내가 업로드한 이미지:</h3>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
-                        {userImages.map((url, index) => (
-                            <img
-                                key={index}
-                                src={url}
-                                alt={`사진업로드 ${index + 1}`}
-                                style={{ maxWidth: "200px", borderRadius: "5px" }}
-                            />
-                        ))}
+                {userImages.length > 0 && (
+                    <div style={{ marginTop: "20px" }}>
+                        <h3>내가 업로드한 이미지:</h3>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+                            {userImages.map((url, index) => (
+                                <img
+                                    key={index}
+                                    src={url}
+                                    alt={`사진업로드 ${index + 1}`}
+                                    style={{ maxWidth: "200px", borderRadius: "5px" }}
+                                />
+                            ))}
+                        </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )}
+            </div>
+        </DashboardLayout>
     );
 }
