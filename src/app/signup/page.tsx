@@ -28,6 +28,7 @@ export default function Signup() {
         confirmPasswordError
     } = useSignupStore();
 
+    // @ts-ignore
     return (
         <div className={styles.container}>
             <LogoText text={"BODY : CHECK"} />
