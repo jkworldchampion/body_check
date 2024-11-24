@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 function NotFound() {
-    // @ts-ignore
+
     return (
         <div style={{
             display: 'flex',

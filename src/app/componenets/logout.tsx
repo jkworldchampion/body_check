@@ -5,12 +5,19 @@ import { useRouter } from "next/navigation";
 import useAuthStore from "@/store/useAuthStore";
 
 const LogoutButton: React.FC = () => {
-    const logout = useAuthStore((state) => state.logout); // zustand의 로그아웃 함수
-    const router = useRouter(); // Next.js router
+    const logout = useAuthStore((state) => state.logout);
+    const router = useRouter();
 
     const handleLogout = () => {
-        logout(); // Zustand 상태 초기화 (로그아웃)
-        router.push("/Login"); // /login 페이지로 이동
+        // Zustand 상태 초기화
+        logout();
+
+        // 쿠키 삭제
+        document.cookie = "isAuthenticated=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
+        document.cookie = "userId=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
+
+        // 리디렉션
+        router.replace("/Login");
     };
 
     return (

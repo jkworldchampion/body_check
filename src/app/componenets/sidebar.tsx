@@ -38,11 +38,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                             </Link>
                         </li>
                         <li className={styles.sidebarLists}>
-                            <button onClick={() => alert("로그아웃되었습니다!")}>
-                                로그아웃
-                            </button>
-                        </li>
-                        <li className={styles.sidebarLists}>
                             <button onClick={() => alert("다크모드 준비 중입니다!")}>
                                 다크모드
                             </button>
