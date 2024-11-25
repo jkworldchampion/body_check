@@ -12,10 +12,6 @@ const LogoutButton: React.FC = () => {
         // Zustand 상태 초기화
         logout();
 
-        // 쿠키 삭제
-        document.cookie = "isAuthenticated=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
-        document.cookie = "userId=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
-
         // 리디렉션
         router.replace("/Login");
     };

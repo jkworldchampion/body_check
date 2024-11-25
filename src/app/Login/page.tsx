@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { firestore } from '../firestore/firebase'; // Firebase 초기화 파일
 import useAuthStore from '@/store/useAuthStore'; // Zustand 상태 관리
-import Cookies from 'js-cookie'; // 클라이언트 쿠키 라이브러리
 import styles from './login.module.css'; // 스타일 파일
 import Link from 'next/link';
 import LogoText from '@/app/componenets/logoText';
@@ -35,20 +34,6 @@ const Login: FC = () => {
                 if (user && user.password === password) {
                     // Zustand 로그인 상태 업데이트
                     login(id);
-
-                    // 쿠키 설정
-                    Cookies.set('isAuthenticated', 'true', {
-                        expires: 7, // 7일 유효
-                        secure: process.env.NODE_ENV === 'production', // HTTPS 환경에서만 활성
-                        sameSite: 'Strict', // SameSite 보안 설정
-                        path: '/', // 전역 경로 유효
-                    });
-                    Cookies.set('userId', id, {
-                        expires: 7,
-                        secure: process.env.NODE_ENV === 'production',
-                        sameSite: 'Strict',
-                        path: '/',
-                    });
 
                     // 대시보드 페이지로 이동
                     router.push('/dashboard');
@@ -134,7 +119,7 @@ const Login: FC = () => {
                         <p className={styles.firstMeet}>아이디 찾기</p>
                     </Link>
                     <span className={styles.firstMeet}>|</span>
-                    <Link href="/findAccount">
+                    <Link href="/FindPassword">
                         <p className={styles.firstMeet}>비밀번호 찾기</p>
                     </Link>
                 </section>
