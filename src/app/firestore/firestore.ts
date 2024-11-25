@@ -120,4 +120,30 @@ export const getUserImages = async (userId: string): Promise<string[]> => {
         throw error;
     }
 };
+
+/**
+ * Firestore에서 유저 비밀번호를 조회
+ * @param id 유저 ID
+ * @param name 유저 이름
+ * @returns 비밀번호를 반환하거나 null
+ */
+export const getPasswordByIdAndName = async (id: string, name: string): Promise<string | null> => {
+    try {
+        const usersRef = collection(firestore, "users");
+        const q = query(usersRef, where("id", "==", id), where("name", "==", name));
+        const querySnapshot = await getDocs(q);
+
+        if (querySnapshot.empty) {
+            console.log("해당 ID와 이름을 가진 사용자가 없습니다.");
+            return null;
+        }
+
+        const userData = querySnapshot.docs[0].data();
+        return userData.password || null;
+    } catch (error) {
+        console.error("비밀번호 조회 오류:", error);
+        throw error;
+    }
+};
+
 export { firestore };

@@ -5,6 +5,7 @@ interface SignupFormState {
     password: string;
     confirmPassword: string;
     name: string;
+    types:string;
     gender: string;
     address: string;
     isIdUnique: boolean | null;
@@ -20,6 +21,7 @@ const useSignupStore = create<SignupFormState>((set) => ({
     password: "",
     confirmPassword: "",
     name: "",
+    types:"",
     gender: "",
     address: "",
     isIdUnique: null,
