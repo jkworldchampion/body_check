@@ -1,20 +1,22 @@
 "use client";
 
 import React from "react";
-import { FaBars } from "react-icons/fa";
-import { useRouter } from "next/navigation";
-import  useAuthStore  from "../../store/useAuthStore"; // Zustand 스토어
+import {FaBars} from "react-icons/fa";
+import {useRouter} from "next/navigation";
+import useAuthStore from "../../store/useAuthStore"; // Zustand 스토어
 import styles from "./Header.module.css";
 import LogoText from "@/app/componenets/logoText";
 
 interface HeaderProps {
-    toggleSidebar: () => void; // 사이드바 토글 핸들러
+    toggleSidebar: () => void,
+    isLoggedIn?: boolean,
+    onLogout?: () => void
 }
 
 
-export default function Header({ toggleSidebar }: HeaderProps) {
+export default function Header({toggleSidebar, isLoggedIn, onLogout}: HeaderProps) {
     const router = useRouter();
-    const { isAuthenticated, logout } = useAuthStore(); // Zustand 상태 및 메서드
+    const {isAuthenticated, logout} = useAuthStore(); // Zustand 상태 및 메서드
 
     const handleLogout = () => {
         logout(); // Zustand에서 로그아웃 처리
@@ -33,11 +35,11 @@ export default function Header({ toggleSidebar }: HeaderProps) {
                 className={styles.menuButton}
                 aria-label="메뉴 열기"
             >
-                <FaBars size={24} />
+                <FaBars size={24}/>
             </button>
 
             {/* 로고 */}
-            <LogoText text={"BODY : CHECK"} />
+            <LogoText text={"BODY : CHECK"}/>
 
             {/* 네비게이션 */}
             <nav className={styles.nav}>
