@@ -2,126 +2,73 @@
 
 import React, { useEffect, useState } from 'react';
 import DashboardLayout from '@/app/componenets/dashboardLayout';
+import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { firestore } from '@/app/firestore/firebase';
-import {doc, getDoc, collection, query, where, getDocs, setDoc} from 'firebase/firestore';
-import HandleUpload from '@/app/utils/handleImage';
 import useAuthStore from '@/store/useAuthStore';
-import useImageStore from '@/store/imageStore';
-import UseWorkout from '@/app/componenets/useWorkout';
-import ProtectedRoute from '@/app/protectedRoute';
+import Chart from '../componenets/Chart'; // 차트 컴포넌트 import
+import styles from './dashboard.module.css';
 
 const Dashboard = () => {
     const userId = useAuthStore((state) => state.userId); // Zustand에서 로그인된 사용자 ID 가져오기
     const [userName, setUserName] = useState<string | null>(null); // 사용자 이름 상태
-    const uploadedImageUrl = useImageStore((state) => state.uploadedImageUrl); // Zustand 이미지 상태
-    const [userImages, setUserImages] = useState<string[]>([]); // 유저가 업로드한 이미지 리스트
-    const [isLoading, setIsLoading] = useState<boolean>(true); // 로딩 상태
+    const [workoutData, setWorkoutData] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-        // 사용자 이름 가져오기
-        const fetchUserName = async () => {
-            if (!userId) return;
-
-            try {
-                const userDoc = await getDoc(doc(firestore, 'users', userId));
-                if (userDoc.exists()) {
-                    const userData = userDoc.data();
-                    setUserName(userData.name);
-                } else {
-                    console.error('사용자 정보를 찾을 수 없습니다.');
-                }
-            } catch (error) {
-                console.error('사용자 정보 가져오는 중 오류 발생:', error);
-            } finally {
-                setIsLoading(false); // 로딩 상태 종료
-            }
-        };
-
-        fetchUserName();
-    }, [userId]);
-
-    const handleImageSave = async (imageUrl: string) => {
-        if (!userId) {
-            console.error('로그인 정보가 없습니다.');
-            return;
-        }
-
-        try {
-            await setDoc(doc(firestore, 'images', `${userId}_${Date.now()}`), {
-                userId,
-                imageUrl,
-                uploadedAt: new Date().toISOString(),
-            });
-            console.log('이미지가 성공적으로 저장되었습니다.');
-            await fetchUserImages(); // 이미지 저장 후 갱신
-        } catch (error) {
-            console.error('이미지 URL 저장 중 오류 발생:', error);
-        }
-    };
-
-    const fetchUserImages = async () => {
+    const fetchUserName = async () => {
         if (!userId) return;
 
         try {
-            const imagesRef = collection(firestore, 'images');
-            const q = query(imagesRef, where('userId', '==', userId));
+            const userDoc = await getDoc(doc(firestore, 'users', userId));
+            if (userDoc.exists()) {
+                const data = userDoc.data();
+                setUserName(data.name); // Firestore의 이름 데이터를 가져옴
+            } else {
+                console.error('사용자 정보를 찾을 수 없습니다.');
+            }
+        } catch (error) {
+            console.error('사용자 이름을 가져오는 중 오류가 발생했습니다:', error);
+        }
+    };
+
+    const fetchWorkoutData = async () => {
+        try {
+            const workoutRef = collection(firestore, 'workout_sessions');
+            const q = query(workoutRef, where('user_id', '==', userId)); // 사용자 ID로 필터링
             const querySnapshot = await getDocs(q);
 
-            const images: string[] = [];
+            const fetchedData: any[] = [];
             querySnapshot.forEach((doc) => {
                 const data = doc.data();
-                if (data.imageUrl) {
-                    images.push(data.imageUrl);
-                }
+                fetchedData.push(data);
             });
 
-            setUserImages(images);
+            setWorkoutData(fetchedData);
         } catch (error) {
-            console.error('사용자 이미지 가져오는 중 오류 발생:', error);
+            console.error('운동 데이터를 가져오는 중 오류가 발생했습니다:', error);
+        } finally {
+            setIsLoading(false);
         }
     };
 
     useEffect(() => {
-        if (uploadedImageUrl) {
-            handleImageSave(uploadedImageUrl); // Firestore에 이미지 저장
-        }
-    }, [uploadedImageUrl]);
-
-    useEffect(() => {
-        fetchUserImages(); // 컴포넌트가 마운트될 때 유저 이미지 가져오기
+        fetchUserName();
+        fetchWorkoutData();
     }, [userId]);
 
-    if (isLoading) return <p>로딩 중...</p>;
-    if (!userId) return <p>로그인이 필요합니다. 로그인 페이지로 이동 중...</p>;
+    if (isLoading) return <p className="text-center text-gray-500">로딩 중...</p>;
 
     return (
-        <ProtectedRoute>
-            <DashboardLayout>
-                <div className="p-4">
-                    <h1>안녕하세요 {userName || 'User'} 님!</h1>
-                    <p>오늘도 운동하러 오셨군요!</p>
+        <DashboardLayout>
+            <div className={`${styles.introBox} mb-6`}>
+                <h1 className={styles.introTitle}>
+                    안녕하세요 {userName || 'User'} 님! 👋
+                </h1>
+                <p className={styles.introSubtitle}>오늘의 운동 기록을 확인해보세요! </p>
+            </div>
 
-                    <HandleUpload />
-                    <UseWorkout userId={userId} />
-
-                    {userImages.length > 0 && (
-                        <div style={{ marginTop: '20px' }}>
-                            <h3>내가 업로드한 이미지:</h3>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-                                {userImages.map((url, index) => (
-                                    <img
-                                        key={index}
-                                        src={url}
-                                        alt={`사진업로드 ${index + 1}`}
-                                        style={{ maxWidth: '200px', borderRadius: '5px' }}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                </div>
-            </DashboardLayout>
-        </ProtectedRoute>
+            {/* 차트 렌더링 */}
+            <Chart workoutData={workoutData} />
+        </DashboardLayout>
     );
 };
 
