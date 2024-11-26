@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-interface SignupFormState {
+export interface SignupFormState {
     id: string;
     password: string;
     confirmPassword: string;
@@ -8,6 +8,9 @@ interface SignupFormState {
     types:string;
     gender: string;
     address: string;
+    height:number;
+    weight:number;
+    bmi: number | null; // BMI 추가
     isIdUnique: boolean | null;
     isSignupComplete: boolean;
     passwordError: string | null;          // 비밀번호 오류 메시지
@@ -16,7 +19,7 @@ interface SignupFormState {
     validatePasswords: () => void;        // 비밀번호 유효성 검사 함수
 }
 
-const useSignupStore = create<SignupFormState>((set) => ({
+export const useSignupStore = create<SignupFormState>((set) => ({
     id: "",
     password: "",
     confirmPassword: "",
@@ -24,6 +27,10 @@ const useSignupStore = create<SignupFormState>((set) => ({
     types:"",
     gender: "",
     address: "",
+    height:0,
+    weight:0,
+    bmi:null,
+
     isIdUnique: null,
     isSignupComplete: false,
     passwordError: null,

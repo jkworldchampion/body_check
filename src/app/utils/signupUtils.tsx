@@ -1,4 +1,4 @@
-// src/utils/signupUtils.ts
+// 이메일 로직을 위한 건데... 오류가 너무 많이 나서 일단 뺌
 import { useRouter } from 'next/navigation';
 import { getAuth, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink } from 'firebase/auth';
 import { useState, useEffect } from 'react';
@@ -17,6 +17,7 @@ export const useSignupHandlers = () => {
     const [message, setMessage] = useState<string | null>(null);
     const [isEmailVerified, setIsEmailVerified] = useState(false);
     const [isSignupComplete, setIsSignupComplete] = useState(false);
+    const [types, setTypes] = useState<number[]>([]);
     const router = useRouter();
 
     // 추가한 clearMessage와 clearError 함수
@@ -87,11 +88,11 @@ export const useSignupHandlers = () => {
 
     return {
         states: {
-            email, id, name, gender, address, password, confirmPassword,
+            email, id, name, gender, types,address, password, confirmPassword,
             error, message, isEmailVerified, isSignupComplete
         },
         handlers: {
-            setEmail, setId, setName, setGender, setAddress,
+            setEmail, setId, setName, setTypes,setGender, setAddress,
             setPassword, setConfirmPassword, // 비밀번호 관련 핸들러 추가
             handleSendVerificationEmail, handleCompleteSignup,
             clearMessage, // clearMessage 추가
