@@ -10,12 +10,10 @@ import os
 app = Flask(__name__)
 
 # Firebase 초기화
-cred = credentials.Certificate("serviceAccountKey.json")
-firebase_admin.initialize_app(cred, {
-    'storageBucket': 'your-project-id.appspot.com'  # Firebase Storage 버킷 이름
-})
-
+cred = credentials.Certificate("bodycheck-e86de-firebase-adminsdk-17hwd-58c212763e.json")  # Firebase 자격 증명 파일 경로 확인
+firebase_admin.initialize_app(cred)
 db = firestore.client()
+
 bucket = storage.bucket()
 
 # TensorFlow 모델 로드
