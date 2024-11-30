@@ -1,3 +1,5 @@
+//회원가입 zustand
+
 import { create } from "zustand";
 
 export interface SignupFormState {
@@ -10,6 +12,7 @@ export interface SignupFormState {
     address: string;
     height:number;
     weight:number;
+    age:number;
     bmi: number | null; // BMI 추가
     isIdUnique: boolean | null;
     isSignupComplete: boolean;
@@ -29,6 +32,7 @@ export const useSignupStore = create<SignupFormState>((set) => ({
     address: "",
     height:0,
     weight:0,
+    age:0,
     bmi:null,
 
     isIdUnique: null,
