@@ -1,1 +1,19 @@
+
+# 환경 변수 파일
+.env.local
+
+# Next.js 빌드 결과물
+.next/
+
+# 의존성 모듈
 node_modules/
+
+# IDE 설정 파일
+.idea/
+.vscode/
+
+# 로그 파일
+*.log
+
+# 기타 캐시 파일
+*.gz
