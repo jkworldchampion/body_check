@@ -73,19 +73,6 @@ const Dashboard = () => {
 
 
 
-    // BMI 차트를 위한 데이터
-    const analyzeData = {
-        labels:'bmi',
-        datasets: [
-            {
-                label: `사용자의 BMI: ${bmi || '데이터 없음'}`,
-                data: [bmi], // 평균 데이터
-                borderWidth:1,
-                barThickness: 30,
-                backgroundColor: ['#ADD8E6'],
-            },
-        ],
-    };
 
     // @ts-ignore
     // @ts-ignore
