@@ -12,7 +12,7 @@ export const uploadImageToCloudinary = (
     return new Promise((resolve, reject) => {
         // Cloudinary 스크립트가 로드되었는지 확인
         if (!window.cloudinary) {
-            const error = new Error('Cloudinary script not loaded');
+            const error = new Error('스크립트가 로드되지 않았습니다.');
             if (onError) onError(error);
             reject(error);
             return;
