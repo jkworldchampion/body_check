@@ -2,8 +2,14 @@
     max-width: 800px;
     margin: 0 auto 100px;
     padding: 100px;
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+
 
 }
+
 
 .title {
     text-align: center;
@@ -17,13 +23,14 @@
 .subtitle {
     text-align: center;
     font-size: 1.5em;
-    color: #333;
+    color: #030303;
     margin-bottom: 20px;
     margin-top: 10px;
 }
+
 .line {
     margin: 20px 0 40px 0;
-    border: 1px solid #ccc;
+    border: 1px solid #030303;
 }
 
 .form {
@@ -48,6 +55,7 @@
 .labelText {
     font-size: 20px;
     margin-bottom: 10px;
+    color:#030303;
 }
 .input {
     padding: 10px;

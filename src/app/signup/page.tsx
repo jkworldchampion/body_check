@@ -1,4 +1,3 @@
-// src/app/signup/personal/page.tsx
 "use client";
 
 import React from "react";
@@ -9,9 +8,10 @@ import {
     handleInputChange,
     handleIdCheck,
     handleSignup,
-    isFormValid
+    isFormValid,
 } from "../utils/signingupUtils";
 import LogoText from "@/app/componenets/logoText";
+import BMICalculator from "@/app/componenets/BMICalculator";
 
 export default function Signup() {
     const router = useRouter();
@@ -21,14 +21,19 @@ export default function Signup() {
         confirmPassword,
         name,
         gender,
+        height,
+        age,
+        weight,
         address,
         isIdUnique,
         isSignupComplete,
         passwordError,
-        confirmPasswordError
+        confirmPasswordError,
+        types,
     } = useSignupStore();
 
-    // @ts-ignore
+
+
     return (
         <div className={styles.container}>
             <LogoText text={"BODY : CHECK"} />
@@ -41,10 +46,12 @@ export default function Signup() {
                     <input
                         type="text"
                         value={id}
-                        onChange={(e) => handleInputChange("id", e.target.value)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                            handleInputChange("id", e.target.value)
+                        }
                         required
                         className={styles.input}
-                        placeholder={'아이디를 입력해주세요'}
+                        placeholder="아이디를 입력하세요"
                     />
                     <button
                         type="button"
@@ -65,7 +72,7 @@ export default function Signup() {
                         onChange={(e) => handleInputChange("password", e.target.value)}
                         required
                         className={styles.input}
-                        placeholder={'비밀번호는 영소문자와 숫자 조합으로 8자리 이상 입력해주세요.'}
+                        placeholder="비밀번호는 영소문자와 숫자 조합으로 8자리 이상 입력해주세요."
                     />
                     {passwordError && <p className={styles.error}>{passwordError}</p>}
                 </div>
@@ -78,8 +85,7 @@ export default function Signup() {
                         onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
                         required
                         className={styles.input}
-                        placeholder={'비밀번호 확인'}
-
+                        placeholder="비밀번호 확인"
                     />
                     {confirmPasswordError && <p className={styles.error}>{confirmPasswordError}</p>}
                 </div>
@@ -96,23 +102,82 @@ export default function Signup() {
                 </div>
 
                 <div className={styles.field}>
+                    <label className={styles.labelText}>*회원유형</label>
+                    <div className={styles.genderButtons}>
+                        <button
+                            type="button"
+                            onClick={() => handleInputChange("types", "개인회원")}
+                            className={`${styles.genderButton} ${
+                                types === "개인회원" ? styles.selected : ""
+                            }`}
+                        >
+                            개인회원
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => handleInputChange("types", "기업회원")}
+                            className={`${styles.genderButton} ${
+                                types === "기업회원" ? styles.selected : ""
+                            }`}
+                        >
+                            기업회원
+                        </button>
+                    </div>
+                </div>
+
+                <div className={styles.field}>
                     <label className={styles.labelText}>*성별</label>
                     <div className={styles.genderButtons}>
                         <button
                             type="button"
                             onClick={() => handleInputChange("gender", "남")}
-                            className={`${styles.genderButton} ${gender === "남" ? styles.selected : ""}`}
+                            className={`${styles.genderButton} ${
+                                gender === "남" ? styles.selected : ""
+                            }`}
                         >
                             남
                         </button>
                         <button
                             type="button"
                             onClick={() => handleInputChange("gender", "여")}
-                            className={`${styles.genderButton} ${gender === "여" ? styles.selected : ""}`}
+                            className={`${styles.genderButton} ${
+                                gender === "여" ? styles.selected : ""
+                            }`}
                         >
                             여
                         </button>
+
                     </div>
+                </div>
+                <div className={styles.field}>
+                    <label className={styles.labelText}>*나이</label>
+                    <input
+                        type="number"
+                        value={age}
+                        onChange={(e) => handleInputChange("age", Number(e.target.value))}
+                        required
+                        className={styles.input}
+                    />
+                </div>
+                <div className={styles.field}>
+                    <label className={styles.labelText}>*키</label>
+                    <input
+                        type="number"
+                        value={height}
+                        onChange={(e) => handleInputChange("height", Number(e.target.value))}
+                        required
+                        className={styles.input}
+                    />
+                </div>
+                <div className={styles.field}>
+                    <label className={styles.labelText}>*몸무게</label>
+                    <input
+                        type="number"
+                        value={weight}
+                        onChange={(e) => handleInputChange("weight", Number(e.target.value))}
+                        required
+                        className={styles.input}
+                    />
                 </div>
 
                 <div className={styles.field}>
@@ -128,12 +193,15 @@ export default function Signup() {
 
                 <button
                     type="submit"
-                    className={`${styles.submitButton} ${isSignupComplete ? styles.active : styles.button}`}
+                    className={`${styles.submitButton} ${
+                        isSignupComplete ? styles.active : styles.button
+                    }`}
                     disabled={!isFormValid()}
                 >
                     회원가입 완료
                 </button>
             </form>
+            <BMICalculator/>
         </div>
     );
 }
