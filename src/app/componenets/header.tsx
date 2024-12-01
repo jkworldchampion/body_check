@@ -5,7 +5,6 @@ import {FaBars} from "react-icons/fa";
 import {useRouter} from "next/navigation";
 import useAuthStore from "../../store/useAuthStore"; // Zustand 스토어
 import styles from "./Header.module.css";
-import LogoText from "@/app/componenets/logoText";
 
 interface HeaderProps {
     toggleSidebar: () => void,
@@ -14,7 +13,7 @@ interface HeaderProps {
 }
 
 
-export default function Header({toggleSidebar, isLoggedIn, onLogout}: HeaderProps) {
+export default function Header({toggleSidebar}: HeaderProps) {
     const router = useRouter();
     const {isAuthenticated, logout} = useAuthStore(); // Zustand 상태 및 메서드
 
@@ -24,7 +23,7 @@ export default function Header({toggleSidebar, isLoggedIn, onLogout}: HeaderProp
     };
 
     const handleNavigation = () => {
-        router.push("/dashboard");
+        router.push("/myPage");
     };
 
     return (
@@ -39,7 +38,10 @@ export default function Header({toggleSidebar, isLoggedIn, onLogout}: HeaderProp
             </button>
 
             {/* 로고 */}
-            <LogoText text={"BODY : CHECK"}/>
+            <p className={styles.LogoText}>
+                BODY:CHECK
+            </p>
+
 
             {/* 네비게이션 */}
             <nav className={styles.nav}>
