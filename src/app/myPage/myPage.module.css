@@ -1,7 +1,3 @@
-/* src/pages/MyPage.module.css */
-
-
-
 /* 제목 스타일 */
 .title {
     font-size: 24px;
@@ -44,7 +40,7 @@
 /* 입력 필드 스타일 */
 .input {
     padding: 8px 12px;
-    font-size: 16px;
+    font-size: 20px;
     border: 1px solid #ccc;
     border-radius: 4px;
     width: 100%;
@@ -69,7 +65,7 @@
 .description {
     margin-top: 20px;
     margin-bottom: 20px;
-    font-size: 16px;
+    font-size: 25px;
 }
 .line {
     margin: 20px 0 40px 0;
