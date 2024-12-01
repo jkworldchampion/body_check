@@ -28,7 +28,7 @@ export const checkIdAvailability = async (id: string): Promise<boolean> => {
 export const handleInputChange = <T extends keyof SignupFormState>(
     field: T,
     value: SignupFormState[T]
-) => {    const { setField, password, confirmPassword } = useSignupStore.getState();
+) => {    const { setField, password } = useSignupStore.getState();
 
     setField(field, value);
 
@@ -70,7 +70,7 @@ export const handleSignup = async (
     router: AppRouterInstance // 타입 수정
 ) => {
     e.preventDefault();
-    const { id, password, confirmPassword, name, types,gender, address,bmi,isIdUnique, height, weight,setField } = useSignupStore.getState();
+    const { id, password, confirmPassword, age,name, types,gender, address,bmi,isIdUnique, height, weight,setField } = useSignupStore.getState();
 
     if (!isPasswordValid(password)) {
         alert("비밀번호는 영문 소문자와 숫자를 포함하여 8자리 이상이어야 합니다.");
@@ -94,7 +94,8 @@ export const handleSignup = async (
                 types,
                 height,
                 weight,
-                bmi
+                bmi,
+                age
             });
 
             setField("isSignupComplete", true);
@@ -110,7 +111,7 @@ export const handleSignup = async (
 };
 // 모든 필드가 유효한지 확인하는 함수
 export const isFormValid = (): "" | 0 | false | null | boolean => {
-    const { id, password, types,confirmPassword, name, gender, address, isIdUnique,height,weight, } = useSignupStore.getState();
+    const { id, password, age,types,confirmPassword, name, gender, address, isIdUnique,height,weight, } = useSignupStore.getState();
     return (
         id &&
         password &&
@@ -121,6 +122,7 @@ export const isFormValid = (): "" | 0 | false | null | boolean => {
         types &&
         address &&
         height &&
+        age &&
         weight &&
         isIdUnique && // 아이디 중복 확인 완료
         isPasswordValid(password) &&
