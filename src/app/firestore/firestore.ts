@@ -1,6 +1,6 @@
 // src/firestore/firestore.ts
 import { firestore } from './firebase';
-import {collection, addDoc, getDoc, doc, query, where, getDocs, setDoc} from 'firebase/firestore';
+import {collection, addDoc, getDoc, doc, query, where, getDocs, setDoc, updateDoc} from 'firebase/firestore';
 
 
 /**
@@ -142,6 +142,34 @@ export const getPasswordByIdAndName = async (id: string, name: string): Promise<
         return userData.password || null;
     } catch (error) {
         console.error("비밀번호 조회 오류:", error);
+        throw error;
+    }
+};
+
+
+interface UserData {
+    id: string;
+    age: number;
+    height: number;
+    weight: number;
+    address: string;
+    [key: string]: string | number;
+}
+/**
+ * Firestore에서 사용자 데이터를 업데이트
+ * @param userId 사용자 ID
+ * @param updatedFields 업데이트할 필드 객체
+ */
+export const updateUserData = async (
+    userId: string,
+    updatedFields: Partial<UserData>
+): Promise<void> => {
+    try {
+        const userDoc = doc(firestore, "users", userId);
+        await updateDoc(userDoc, updatedFields);
+        console.log("Firestore 데이터 업데이트 완료!");
+    } catch (error) {
+        console.error("Firestore 데이터 업데이트 오류:", error);
         throw error;
     }
 };
