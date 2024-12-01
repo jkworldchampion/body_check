@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import styles from "./sidebar.module.css";
-import { FaHome, FaChartBar, FaUser, FaMoon } from "react-icons/fa";
+import {FaHome, FaChartBar, FaMoon, FaBicycle} from "react-icons/fa";
 
 interface SidebarProps {
     isOpen: boolean; // 사이드바 열림/닫힘 상태
@@ -24,9 +24,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 <nav>
                     <ul className={styles.sidebarList}>
                         <li className={styles.sidebarLists}>
-                            <Link href="/recordingExercise" onClick={onClose}>
+                            <Link href="/dashboard" onClick={onClose}>
                                 <FaHome className="mr-2" />
-                                운동기록 보기
+                                 운동기록 보기
                             </Link>
                         </li>
                         <li className={styles.sidebarLists}>
@@ -36,9 +36,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                             </Link>
                         </li>
                         <li className={styles.sidebarLists}>
-                            <Link href="/analyzeBody" onClick={onClose}>
-                                <FaUser className="mr-2" />
-                                체형분석 보기
+                            <Link href="/tracking" onClick={onClose}>
+                                <FaBicycle className="mr-2" />
+                                실시간 운동 트래킹
                             </Link>
                         </li>
                         <li className={styles.sidebarLists}>
