@@ -1,16 +1,17 @@
 "use client";
 
-import React, { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import React, {useEffect} from "react";
+import {useRouter} from "next/navigation";
 import useAuthStore from "@/store/useAuthStore";
 
 interface ProtectedRouteProps {
-    children: React.ReactNode;
+    children: React.ReactNode,
+    isRestricted?: boolean
 }
 
-export default function ProtectedRoute({ children }: ProtectedRouteProps) {
+export default function ProtectedRoute({children}: ProtectedRouteProps) {
     const router = useRouter();
-    const { isAuthenticated, login } = useAuthStore();
+    const {isAuthenticated, login} = useAuthStore();
 
     useEffect(() => {
         // 쿠키 읽기
