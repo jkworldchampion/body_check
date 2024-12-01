@@ -6,30 +6,34 @@
     width: 100vw;
     height: 100vh;
     background: rgba(0, 0, 0, 0.5);
-    z-index: 10;
+    z-index: 100;
+
 }
 
 .sidebar {
     position: fixed;
     top: 0;
-    left:-250px;
-    width: 250px;
+    left:-300px;
+    width: 300px;
     height: 100vh;
-    background: #1f2937;
-    color: white;
-    transition: all 0.3s ease;
-    z-index: 20;
+    background: #030303;
+    transition: left ease;
     padding: 20px;
+    z-index: 1100;
+
 }
 
+/*사이드바가 열릴 때 */
 .sidebar.open {
     left: 0;
+    width:300px;
+    background-color:#030303;
 }
 
 .closeButton {
     background: none;
     border: none;
-    color: white;
+    color: #030303;
     font-size: 1.5rem;
     cursor: pointer;
     margin-bottom: 20px;
@@ -63,3 +67,4 @@
     background: #374151;
     color: white;
 }
+
