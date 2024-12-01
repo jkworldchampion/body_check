@@ -1,21 +1,20 @@
 .chartContainer {
     display: flex; /* Flex로 가로 정렬 */
-    gap: 60px;
-    margin-top: 20px;
-    padding:30px;
-    margin-left:30px;
+    gap: 2%;
+    margin-top: 2%;
     align-items: center;
 
 }
 
 .chartCard {
-    background-color: #ffffff;
+    background: #ffffff ;
     border-radius: 12px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    padding: 100px;
     text-align: center;
-    width: 500px;
-    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    margin-left:1rem;
+    width: 30%;
+    transition: transform 0.2s ease-in-out,
+    box-shadow 0.2s ease-in-out;
 }
 
 .chartCard:hover {
@@ -28,18 +27,20 @@
     font-weight: bold;
     color: #374151;
     margin-bottom: 10px;
+    margin-left:50px;
 }
 
-.lineChartContainer {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 30px;
-    margin-top: 40px;
+.barChartContainer {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    height:600px;
+    margin-left: 50px;
+
 }
 
-.lineChart {
-    background-color: #ffffff;
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+.barChart {
+    width: 80%; /* 그래프의 너비를 적절히 조정 */
+
 }
+

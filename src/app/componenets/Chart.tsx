@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Doughnut, Line } from 'react-chartjs-2';
+import { Doughnut, Bar } from 'react-chartjs-2';
 import {
     Chart as ChartJS,
     ArcElement,
@@ -10,8 +10,7 @@ import {
     Title,
     CategoryScale,
     LinearScale,
-    PointElement,
-    LineElement,
+    BarElement,
 } from 'chart.js';
 
 import styles from './chart.module.css';
@@ -23,108 +22,157 @@ ChartJS.register(
     Title,
     CategoryScale,
     LinearScale,
-    PointElement,
-    LineElement
+    BarElement
 );
 
+interface WorkoutSet {
+    reps: string;
+    weight?: string;
+}
+
+interface WorkoutData {
+    workout_type: string;
+    date: string;
+    sets: WorkoutSet[];
+}
+
 interface ChartProps {
-    workoutData: any[];
+    workoutData: WorkoutData[];
 }
 
 const Chart: React.FC<ChartProps> = ({ workoutData }) => {
     const workoutTypes = ['benchpress', 'squat', 'running'];
 
-    const workoutCharts = workoutTypes.map((type) => {
-        const typeData = workoutData.filter((data) => data.workout_type === type);
+    // 날짜별로 그룹화된 데이터 준비
+    const dates = Array.from(new Set(workoutData.map((data) => data.date))).sort();
 
-        const totalSets = typeData.reduce((sum, data) => sum + data.sets.length, 0);
-        const totalReps = typeData.reduce(
-            (sum, data) => sum + data.sets.reduce((s: number, set: any) => s + parseInt(set.reps, 10), 0),
-            0
-        );
-        const totalWeight = typeData.reduce(
-            (sum, data) =>
-                sum +
-                data.sets.reduce((s: number, set: any) => s + parseInt(set.weight || 0, 10), 0),
-            0
-        );
-
-        return {
-            type,
-            totalSets,
-            totalReps,
-            totalWeight,
-        };
-    });
-
-    const lineChartData = (field: 'reps' | 'sets' | 'weight') => {
-        const labels = workoutData.length > 0 ? workoutData.map((data) => data.date) : ['2024-01-01'];
-        const datasets = [
+    const barChartData = {
+        labels: dates,
+        datasets: [
             {
-                label: field === 'reps' ? 'Reps' : field === 'sets' ? 'Sets' : 'Weights',
-                data: workoutData.length
-                    ? workoutData.map((data) =>
-                        data.sets.reduce((sum: number, set: any) => sum + parseInt(set[field] || 0, 10), 0)
-                    )
-                    : [0],
-                borderColor: field === 'reps' ? '#4F46E5' : field === 'sets' ? '#16A34A' : '#EAB308',
-                backgroundColor: field === 'reps' ? '#4F46E550' : field === 'sets' ? '#16A34A50' : '#EAB30850',
-                tension: 0.4,
-                fill: true,
+                label: 'Reps',
+                data: dates.map((date) => {
+                    // 특정 날짜의 전체 reps 합산
+                    return workoutData
+                        .filter((data) => data.date === date)
+                        .reduce(
+                            (sum, data) =>
+                                sum +
+                                data.sets.reduce((setSum: number, set: WorkoutSet) => setSum + parseInt(set.reps, 10), 0),
+                            0
+                        );
+                }),
+                backgroundColor: '#4F46E5',
             },
-        ];
-
-        return {
-            labels,
-            datasets,
-        };
+            {
+                label: 'Sets',
+                data: dates.map((date) => {
+                    // 특정 날짜의 전체 sets 수
+                    return workoutData
+                        .filter((data) => data.date === date)
+                        .reduce((sum, data) => sum + data.sets.length, 0);
+                }),
+                backgroundColor: '#16A34A',
+            },
+            {
+                label: 'Weights',
+                data: dates.map((date) => {
+                    // 특정 날짜의 전체 weight 합산
+                    return workoutData
+                        .filter((data) => data.date === date)
+                        .reduce(
+                            (sum, data) =>
+                                sum +
+                                data.sets.reduce((setSum: number, set: WorkoutSet) => setSum + parseInt(set.weight || '0', 10), 0),
+                            0
+                        );
+                }),
+                backgroundColor: '#EAB308',
+            },
+        ],
     };
 
     return (
         <div>
             {/* 운동별 원형 그래프 */}
             <div className={styles.chartContainer}>
-                {workoutCharts.map((chart, index) => {
-                    const data = {
+                {workoutTypes.map((type, index) => {
+                    const typeData = workoutData.filter((data) => data.workout_type === type);
+                    const totalSets = typeData.reduce((sum, data) => sum + data.sets.length, 0);
+                    const totalReps = typeData.reduce(
+                        (sum, data) =>
+                            sum +
+                            data.sets.reduce((s: number, set: WorkoutSet) => s + parseInt(set.reps, 10), 0),
+                        0
+                    );
+                    const totalWeight = typeData.reduce(
+                        (sum, data) =>
+                            sum +
+                            data.sets.reduce((s: number, set: WorkoutSet) => s + parseInt(set.weight || '0', 10), 0),
+                        0
+                    );
+
+                    const doughnutData = {
                         labels: ['완료된 세트', '남은 세트'],
                         datasets: [
                             {
-                                label: `${chart.type} Progress`,
-                                data: [chart.totalSets || 0, 10 - (chart.totalSets || 0)], // 최대 10세트 기준
-                                backgroundColor: ['#4F46E5', '#E5E7EB'],
-                                borderWidth: 1,
+                                label: `${type.toUpperCase()} Progress`,
+                                data: [totalSets, Math.max(0, 10 - totalSets)], // 최대 10 세트 기준
+                                backgroundColor: ['#CF2F11', '#757575'],
                             },
                         ],
                     };
 
                     return (
                         <div key={index} className={styles.chartCard}>
-                            <h3 className={styles.chartTitle}>{chart.type.toUpperCase()}</h3>
-                            <Doughnut data={data} />
-                            <div>
-                                <p>총 세트: {chart.totalSets || '0'} 세트</p>
-                                <p>총 반복: {chart.totalReps || '0'} 회</p>
-                                <p>총 무게: {chart.totalWeight || '0'} kg</p>
+                            <h3 className={styles.chartTitle}>{type.toUpperCase()}</h3>
+                            <div style={{ width: '200px', height: '200px', margin: '0 auto' }}>
+                                <Doughnut data={doughnutData} />
+                            </div>
+                            <div style={{ marginTop: '30px', color: '#030303' }}>
+                                <p>총 세트: {totalSets || '0'} 세트</p>
+                                <p>총 반복: {totalReps || '0'} 회</p>
+                                <p>총 무게: {totalWeight || '0'} kg</p>
                             </div>
                         </div>
                     );
                 })}
             </div>
 
-            {/* 꺾은선 그래프 */}
-            <div className={styles.lineChartContainer}>
-                <div className={styles.lineChart}>
-                    <Line data={lineChartData('reps')} />
-                </div>
-                <div className={styles.lineChart}>
-                    <Line data={lineChartData('sets')} />
-                </div>
-                <div className={styles.lineChart}>
-                    <Line data={lineChartData('weight')} />
+            {/* 날짜별 막대 그래프 */}
+            <div className={styles.barChartContainer}>
+                <div className={styles.barChart}>
+                    <div style={{width: '800px', height: '600px', marginTop: '100px'}}>
+
+                        <Bar
+                            data={barChartData}
+                            options={{
+                                responsive: true,
+                                maintainAspectRatio: false, // 고정 높이를 유지하기 위해 비율 유지 비활성화
+                                plugins: {
+                                    legend: {
+                                        position: 'top',
+                                    },
+                                },
+                                scales: {
+                                    x: {
+                                        grid: {
+                                            display: false,
+                                        },
+
+                                    },
+                                    y: {
+                                        beginAtZero: true,
+                                    },
+                                },
+                            }}
+
+                        />
+                    </div>
                 </div>
             </div>
         </div>
-    );
-};
+            );
+            };
 
-export default Chart;
+            export default Chart;
