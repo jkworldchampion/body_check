@@ -2,17 +2,45 @@
 
 import React, { useEffect, useState } from 'react';
 import { firestore } from '@/app/firestore/firebase';
-import { collection, query, where, getDocs, addDoc } from 'firebase/firestore';
+import {collection, query, where, getDocs, addDoc, doc, getDoc} from 'firebase/firestore';
 import useAuthStore from '@/store/useAuthStore';
 import DashboardLayout from '@/app/componenets/dashboardLayout';
 import styles from './changeBody.module.css'; // 스타일 모듈 import
+import headerStyles from "@/app/utils/headerStyles";
+import {BarElement, CategoryScale, Chart as ChartJS, Legend, LinearScale, Title, Tooltip} from "chart.js";
+import annotationPlugin from "chartjs-plugin-annotation";
+import { Bar } from 'react-chartjs-2'; // Chart.js
+
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, annotationPlugin);
+
+
+
 
 const ChangeBody = () => {
     const userId = useAuthStore((state) => state.userId);
     const [userImages, setUserImages] = useState<string[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
-    const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [bmi, setBMI] = useState<number | null>(null); // 사용자 BMI
     const [isScriptLoaded, setIsScriptLoaded] = useState(false);
+
+
+    // firestore 에서 bmi 데이터 가져오기
+    const fetchBMIData = async () => {
+        try {
+            const userDocRef = doc(firestore, 'users', userId); // `users` 컬렉션의 특정 문서 참조
+            const userDoc = await getDoc(userDocRef); // 문서 가져오기
+
+            if (userDoc.exists()) {
+                const userData = userDoc.data();
+                setBMI(userData.bmi); // Firestore에서 BMI 값을 가져와 상태에 저장
+            } else {
+                console.error('사용자 데이터를 찾을 수 없습니다.');
+            }
+        } catch (error) {
+            console.error('BMI 데이터를 가져오는 중 오류가 발생했습니다:', error);
+        } finally {
+        }
+    };
 
     useEffect(() => {
         const fetchUserImages = async () => {
@@ -40,6 +68,8 @@ const ChangeBody = () => {
         };
 
         fetchUserImages();
+        fetchBMIData();
+
     }, [userId]);
 
     useEffect(() => {
@@ -62,7 +92,7 @@ const ChangeBody = () => {
 
     const handleUpload = () => {
         if (!isScriptLoaded) {
-            console.error('Cloudinary script is not loaded yet');
+            console.error('cloudinary script 가 아직 로드되지 않았습니다. ');
             return;
         }
 
@@ -101,6 +131,7 @@ const ChangeBody = () => {
         widget.open();
     };
 
+
     const handleNext = () => {
         setCurrentIndex((prevIndex) => (prevIndex + 1) % userImages.length);
     };
@@ -109,13 +140,86 @@ const ChangeBody = () => {
         setCurrentIndex((prevIndex) => (prevIndex - 1 + userImages.length) % userImages.length);
     };
 
+
+
+    const analyzeData = {
+        labels:['bmi'],
+        datasets: [
+            {
+                label: `사용자의 BMI: ${bmi || '데이터 없음'}`,
+                data: [bmi], // 평균 데이터
+                borderWidth:1,
+                barThickness: 30,
+                backgroundColor: '#ADD8E6',
+            },
+        ],
+    };
+
+    // 옵션지정하기
+    const analyzeOptions = {
+        indexAxis: "y",// 가로 방향 막대 그래프
+        responsive: true,
+        maintainAspectRatio: false, // 크기 비율을 강제로 조정 가능하도록 설정
+        plugins: {
+            legend: { // 범례 설정
+                display: true, // 범례 활성
+            },
+            tooltip: {
+                callbacks: {
+                    label: (context: any) => `BMI: ${context.raw}`, // 툴팁에 BMI 값 표시
+                },
+            },
+        },
+        scales: {
+            x: {
+                type: "linear", // X축을 숫자형 스케일로 설정
+                min: 10, // X축 최소값
+                max: 55, // X축 최대값
+                ticks: {
+                    stepSize: 5, // X축 값 간격
+                    callback: (value: number) => {
+                        // X축 커스텀 레이블
+                        const labelsMap: { [key: number]: string } = {
+                            10: '10',
+                            18.5: '18.5(저체중)',
+                            25: '25 (정상)',
+                            30: '30(과체중)',
+                            55: '55',
+                        };
+                        return labelsMap[value] || value.toString();
+                    },
+                },
+                title: { display: true, text: 'BMI 값' }, // X축 제목
+            },
+            y: {
+                type: 'category', // Y축을 카테고리형으로 설정
+                labels: ['BMI'], // Y축 레이블
+                title: { display: false }, // Y축 제목 제거
+            },
+        },
+    };
+
+    // @ts-ignore
     return (
         <DashboardLayout>
-            <div className={`${styles.introBox} mb-6`}>
-                <h1 className={styles.introTitle}>
-                    그동안의 오운완 💪 ! 사진을 확인해보세요 !
+            <div>
+                <h1 style={headerStyles.introTitle}>
+                    오늘도 열심히 운동하셨군요!
                 </h1>
+                <p style={headerStyles.introSubTitle}>
+                    열심히 운동한 당신 !
+                    매일매일 기록하는 오운완 사진을 확인해보세요
+                </p>
+                <div className={styles.analyzeSection}>
+                    <h2 className={styles.analyzeTitle}>체형 분석</h2>
+                    <div className={styles.chartContainer}>
+                        <Bar data={analyzeData} options={analyzeOptions}/>
+                    </div>
+                </div>
+
+
             </div>
+
 
             <div className={styles.pageContainer}>
                 <div className={styles.carouselContainer}>
