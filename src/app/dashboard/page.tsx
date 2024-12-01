@@ -5,15 +5,23 @@ import DashboardLayout from '@/app/componenets/dashboardLayout';
 import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { firestore } from '@/app/firestore/firebase';
 import useAuthStore from '@/store/useAuthStore';
-import Chart from '../componenets/Chart'; // 차트 컴포넌트 import
-import styles from './dashboard.module.css';
+import { useUserStore } from '@/store/userStore'; // Zustand에서 사용자 데이터 가져오기
+import Chart from '../componenets/Chart'; // 기존 운동 기록 차트 컴포넌트
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
+import annotationPlugin from 'chartjs-plugin-annotation';
+import headerStyles from '@/app/utils/headerStyles';
+
+// Chart.js 플러그인 등록
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, annotationPlugin);
 
 const Dashboard = () => {
     const userId = useAuthStore((state) => state.userId); // Zustand에서 로그인된 사용자 ID 가져오기
+    const { userData, fetchUser, isLoading: isUserLoading } = useUserStore(); // Zustand 상태
     const [userName, setUserName] = useState<string | null>(null); // 사용자 이름 상태
-    const [workoutData, setWorkoutData] = useState<any[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [workoutData, setWorkoutData] = useState<any[]>([]); // 운동 데이터
+    const [isLoading, setIsLoading] = useState(true); // 운동 데이터 로딩 상태
 
+    // Firestore에서 사용자 이름 가져오기
     const fetchUserName = async () => {
         if (!userId) return;
 
@@ -30,6 +38,7 @@ const Dashboard = () => {
         }
     };
 
+    // Firestore에서 운동 데이터 가져오기
     const fetchWorkoutData = async () => {
         try {
             const workoutRef = collection(firestore, 'workout_sessions');
@@ -50,24 +59,51 @@ const Dashboard = () => {
         }
     };
 
+    // 상태가 바뀔 때 렌더링 될 것들..
+    // 만약에 데이터가 없으면 렌더링 될 텍스트
     useEffect(() => {
         fetchUserName();
         fetchWorkoutData();
-    }, [userId]);
+        if (!userData && typeof userId === 'string') {
+            fetchUser(userId);
+        }
+    }, [userId, fetchUser, userData]);
 
-    if (isLoading) return <p className="text-center text-gray-500">로딩 중...</p>;
+    if (isLoading || isUserLoading) return <p className="text-center text-gray-500">데이터를 불러오는 중입니다...</p>;
 
+
+
+    // BMI 차트를 위한 데이터
+    const analyzeData = {
+        labels:'bmi',
+        datasets: [
+            {
+                label: `사용자의 BMI: ${bmi || '데이터 없음'}`,
+                data: [bmi], // 평균 데이터
+                borderWidth:1,
+                barThickness: 30,
+                backgroundColor: ['#ADD8E6'],
+            },
+        ],
+    };
+
+    // @ts-ignore
+    // @ts-ignore
     return (
         <DashboardLayout>
-            <div className={`${styles.introBox} mb-6`}>
-                <h1 className={styles.introTitle}>
+            {/* 운동 기록 */}
+            <div>
+                <h1 style={headerStyles.introTitle}>
                     안녕하세요 {userName || 'User'} 님! 👋
                 </h1>
-                <p className={styles.introSubtitle}>오늘의 운동 기록을 확인해보세요! </p>
+                <p style={headerStyles.introSubTitle}>
+                    오늘의 운동 기록을 확인해보세요!
+                </p>
+                <Chart workoutData={workoutData} />
             </div>
 
-            {/* 차트 렌더링 */}
-            <Chart workoutData={workoutData} />
+            {/* 체형 분석 */}
+
         </DashboardLayout>
     );
 };
