@@ -47,7 +47,7 @@ let analytics: ReturnType<typeof getAnalytics> | null = null;
 
 if (typeof window !== "undefined") {
     // 브라우저 환경인지 확인
-    isSupported().then((supported) => {
+        isSupported().then((supported) => {
         if (supported) {
             analytics = getAnalytics(app);
             console.log("firebae 오류.");
