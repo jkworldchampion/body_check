@@ -1,5 +1,3 @@
-<!-- templates/video_feed.html -->
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -11,20 +9,39 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            height: 100vh;
+            justify-content: flex-start;
+            height: auto;
             margin: 0;
             font-family: Arial, sans-serif;
             background-color: #f0f2f5;
+            padding: 20px;
         }
         h1 {
             color: #333;
             margin-bottom: 20px;
         }
-        video, canvas {
+        .video-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 20px 0;
+        }
+        video {
+            width: 640px;
+            height: 480px;
             border: 2px solid #ccc;
             border-radius: 10px;
-            display: none; /* 비디오는 클라이언트에서만 캡처하고 서버로 전송 */
+            object-fit: contain;
+            margin: 10px 0;
+        }
+        canvas, #processedImage {
+            display: none; /* 기본적으로 숨김 */
+            width: 640px;
+            height: 480px;
+            border: 2px solid #ccc;
+            border-radius: 10px;
+            object-fit: contain;
+            margin: 10px 0;
         }
         .input-group {
             margin: 20px 0;
@@ -66,18 +83,15 @@
         button:active {
             background-color: #004080;
         }
-        #processedImage {
-            margin-top: 20px;
-            border: 2px solid #ccc;
-            border-radius: 10px;
-        }
     </style>
 </head>
 <body>
     <h1>{{ workout.capitalize() }} Workout Live Feed</h1>
-    <video id="video" width="640" height="480" autoplay></video>
-    <canvas id="canvas" width="640" height="480"></canvas>
-    <img id="processedImage" width="640" height="480" alt="Processed Frame">
+    <div class="video-container">
+        <video id="video" autoplay></video>
+        <canvas id="canvas"></canvas>
+        <img id="processedImage" alt="Processed Frame">
+    </div>
     <div class="input-group">
         <label for="user_id">User ID:</label>
         <input type="text" id="user_id" name="user_id" required>
@@ -96,58 +110,47 @@
     <script>
         {% raw %}
         let ws;
-        let video = document.getElementById('video');
-        let canvas = document.getElementById('canvas');
-        let context = canvas.getContext('2d');
-        let processedImage = document.getElementById('processedImage');
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+        const processedImage = document.getElementById('processedImage');
         let sendInterval;
 
         async function setupCamera() {
-            if (navigator.mediaDevices.getUserMedia) {
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                    video.srcObject = stream;
-                    await video.play();
-                } catch (err) {
-                    console.error("Error accessing camera: ", err);
-                }
-            } else {
-                alert("getUserMedia not supported in this browser.");
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+            } catch (err) {
+                console.error("Error accessing camera:", err);
+                alert("카메라 접근에 실패했습니다. 브라우저 설정을 확인하세요.");
             }
         }
 
         function connectWebSocket(workout) {
-            ws = new WebSocket(`ws://${window.location.host}/ws/${workout}`);
+            const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+            ws = new WebSocket(`${protocol}://${window.location.host}/ws/${workout}`);
 
-            ws.onopen = () => {
-                console.log("WebSocket connection established.");
-            };
-
+            ws.onopen = () => console.log("WebSocket connection established.");
             ws.onmessage = (event) => {
                 const data = JSON.parse(event.data);
                 if (data.processed_frame) {
+                    processedImage.style.display = 'block'; // 서버 이미지 수신 시 표시
                     processedImage.src = `data:image/jpeg;base64,${data.processed_frame}`;
                 }
                 if (data.counter !== undefined) {
                     console.log(`Reps Count: ${data.counter}`);
                 }
                 if (data.message) {
-                    console.log("Message from server: ", data.message);
+                    console.log("Message from server:", data.message);
                 }
             };
-
-            ws.onclose = () => {
-                console.log("WebSocket connection closed.");
-            };
-
-            ws.onerror = (error) => {
-                console.error("WebSocket error: ", error);
-            };
+            ws.onclose = () => console.log("WebSocket connection closed.");
+            ws.onerror = (error) => console.error("WebSocket error:", error);
         }
 
         function startWorkout() {
-            const workout = "{{ workout }}"; // 서버 템플릿 변수
-            const userId = document.getElementById('user_id').value;
+            const workout = "{{ workout }}";
+            const userId = document.getElementById('user_id').value.trim();
             const weight = document.getElementById('weight').value;
 
             if (!userId || !weight) {
@@ -157,7 +160,10 @@
 
             connectWebSocket(workout);
 
-            // Start sending frames every 500ms
+            // 비디오 숨기고 캔버스 표시
+            video.style.display = 'none';
+            canvas.style.display = 'block';
+
             sendInterval = setInterval(() => {
                 context.drawImage(video, 0, 0, canvas.width, canvas.height);
                 const dataURL = canvas.toDataURL('image/jpeg');
@@ -171,7 +177,7 @@
         }
 
         function saveSet() {
-            const userId = document.getElementById('user_id').value;
+            const userId = document.getElementById('user_id').value.trim();
             const weight = document.getElementById('weight').value;
 
             if (!userId) {
@@ -185,19 +191,15 @@
 
             fetch('/set_save', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ user_id: userId, weight: weight })
             })
             .then(response => response.json())
-            .then(data => {
-                alert(data.message);
-            });
+            .then(data => alert(data.message));
         }
 
         function completeWorkout() {
-            const userId = document.getElementById('user_id').value;
+            const userId = document.getElementById('user_id').value.trim();
 
             if (!userId) {
                 alert('Please enter your User ID before completing the workout.');
@@ -209,22 +211,19 @@
 
             fetch('/workout_complete', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ user_id: userId })
             })
             .then(response => response.json())
             .then(data => {
                 alert(data.message);
-                // Reset the processed image
-                processedImage.src = "";
+                processedImage.style.display = 'none'; // 운동 완료 시 숨김
+                canvas.style.display = 'none';
+                video.style.display = 'block'; // 비디오 다시 표시
             });
         }
 
-        window.onload = () => {
-            setupCamera();
-        };
+        window.onload = setupCamera;
         {% endraw %}
     </script>
 </body>
