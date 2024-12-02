@@ -1,40 +1,40 @@
 "use client";
 
-import React, {useEffect} from "react";
-import {useRouter} from "next/navigation";
+import React, { useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import useAuthStore from "@/store/useAuthStore";
+import { auth } from "@/app/firestore/firebase"; // 수정: Firebase 초기화된 auth 객체 가져오기
+import { onAuthStateChanged } from "firebase/auth";
 
 interface ProtectedRouteProps {
-    children: React.ReactNode,
-    isRestricted?: boolean
+    children: React.ReactNode;
 }
 
-export default function ProtectedRoute({children}: ProtectedRouteProps) {
+export default function ProtectedRoute({ children }: ProtectedRouteProps) {
     const router = useRouter();
-    const {isAuthenticated, login} = useAuthStore();
+    const { isAuthenticated, login, logout } = useAuthStore();
+    const isInitialized = useRef(false); // 중복 호출 방지용
 
     useEffect(() => {
-        // 쿠키 읽기
-        const cookies = document.cookie.split("; ").reduce((acc, cookie) => {
-            const [key, value] = cookie.split("=");
-            acc[key] = value;
-            return acc;
-        }, {} as Record<string, string>);
+        if (isInitialized.current) return; // 이미 초기화된 경우 실행 방지
+        isInitialized.current = true;
 
-        // 쿠키와 Zustand 상태 동기화
-        if (cookies.isAuthenticated === "true" && !isAuthenticated) {
-            login(cookies.userId); // Zustand 상태 업데이트
-        }
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            if (user) {
+                console.log("Firebase 사용자 인증됨:", user.uid);
+                login(user.uid); // Zustand 상태 업데이트
+            } else {
+                console.log("Firebase 사용자 로그아웃됨");
+                logout(); // Zustand 상태 초기화
+                router.replace("/Login"); // 로그인 페이지로 리다이렉트
+            }
+        });
 
-        // 비로그인 상태 처리
-        if (cookies.isAuthenticated !== "true") {
-            router.replace("/Login");
-        }
-    }, [isAuthenticated, login, router]);
+        return () => unsubscribe();
+    }, [login, logout, router]);
 
-    // 로그인 상태 확인 중
     if (!isAuthenticated) {
-        return null;
+        return <div>로딩 중...</div>;
     }
 
     return <>{children}</>;

@@ -8,8 +8,11 @@ import useAuthStore from '@/store/useAuthStore'; // Zustand 상태 관리
 import styles from './login.module.css'; // 스타일 파일
 import Link from 'next/link';
 import LogoText from '@/app/componenets/logoText';
+import useSyncAuthState from "../../store/useSyncAuthState"; // Firebase 상태 동기화 훅
+
 
 const Login: FC = () => {
+    useSyncAuthState(); // Firebase와 Zustand 상태 동기화
     const { login } = useAuthStore(); // Zustand의 로그인 상태 함수
     const [id, setId] = useState(''); // 사용자 ID
     const [password, setPassword] = useState(''); // 사용자 비밀번호
@@ -37,6 +40,8 @@ const Login: FC = () => {
 
                     // 대시보드 페이지로 이동
                     router.push('/dashboard');
+                    console.log("로그인 성공, 대시보드로이동");
+                    console.log(router);
                 } else {
                     setError('아이디 또는 비밀번호가 잘못되었습니다.');
                 }
