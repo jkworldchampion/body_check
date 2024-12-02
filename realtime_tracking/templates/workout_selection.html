@@ -1,0 +1,56 @@
+<!-- templates/workout_selection.html -->
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workout Selection</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 1.2em;
+            color: #fff;
+            background-color: #007BFF;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            width: 200px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:active {
+            background-color: #004080;
+        }
+    </style>
+</head>
+<body>
+    <h1>Select Your Workout</h1>
+    <div class="button-group">
+        <button onclick="window.location.href='/video_feed/benchpress'">Bench Press</button>
+        <button onclick="window.location.href='/video_feed/squat'">Squat</button>
+        <button onclick="window.location.href='/video_feed/deadlift'">Deadlift</button>
+    </div>
+</body>
+</html>

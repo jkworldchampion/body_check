@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+opencv-python
+mediapipe
+firebase-admin
+jinja2
+pillow
