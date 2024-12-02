@@ -2,77 +2,61 @@
 
 import React, { useEffect, useState } from 'react';
 import { firestore } from '@/app/firestore/firebase';
-import {collection, query, where, getDocs, addDoc, doc, getDoc} from 'firebase/firestore';
+import { collection, query, where, getDocs, addDoc, doc, getDoc } from 'firebase/firestore';
 import useAuthStore from '@/store/useAuthStore';
 import DashboardLayout from '@/app/componenets/dashboardLayout';
-import styles from './changeBody.module.css'; // 스타일 모듈 import
-import headerStyles from "@/app/utils/headerStyles";
-import {BarElement, CategoryScale, Chart as ChartJS, Legend, LinearScale, Title, Tooltip} from "chart.js";
-import annotationPlugin from "chartjs-plugin-annotation";
-import { Bar } from 'react-chartjs-2'; // Chart.js
+import styles from './changeBody.module.css';
+import headerStyles from '@/app/utils/headerStyles';
+import { BarElement, CategoryScale, Chart as ChartJS, Legend, LinearScale, Title, Tooltip } from 'chart.js';
+import annotationPlugin from 'chartjs-plugin-annotation';
+import { Bar } from 'react-chartjs-2';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, annotationPlugin);
-
-
-
 
 const ChangeBody = () => {
     const userId = useAuthStore((state) => state.userId);
     const [userImages, setUserImages] = useState<string[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
-    const [bmi, setBMI] = useState<number | null>(null); // 사용자 BMI
+    const [bmi, setBMI] = useState<number | null>(null);
     const [isScriptLoaded, setIsScriptLoaded] = useState(false);
 
-
-    // firestore 에서 bmi 데이터 가져오기
+    // BMI 데이터 가져오기
     const fetchBMIData = async () => {
+        if (!userId) return;
+
         try {
-            const userDocRef = doc(firestore, 'users', userId); // `users` 컬렉션의 특정 문서 참조
-            const userDoc = await getDoc(userDocRef); // 문서 가져오기
+            const userDocRef = doc(firestore, 'users', userId);
+            const userDoc = await getDoc(userDocRef);
 
             if (userDoc.exists()) {
                 const userData = userDoc.data();
-                setBMI(userData.bmi); // Firestore에서 BMI 값을 가져와 상태에 저장
+                setBMI(userData.bmi || 0); // 기본값 설정
             } else {
                 console.error('사용자 데이터를 찾을 수 없습니다.');
             }
         } catch (error) {
             console.error('BMI 데이터를 가져오는 중 오류가 발생했습니다:', error);
-        } finally {
         }
     };
 
-    useEffect(() => {
-        const fetchUserImages = async () => {
-            if (!userId) return;
+    // 사용자 이미지 가져오기
+    const fetchUserImages = async () => {
+        if (!userId) return;
 
-            try {
-                const imagesRef = collection(firestore, 'images');
-                const q = query(imagesRef, where('userId', '==', userId));
-                const querySnapshot = await getDocs(q);
+        try {
+            const imagesRef = collection(firestore, 'images');
+            const q = query(imagesRef, where('userId', '==', userId));
+            const querySnapshot = await getDocs(q);
 
-                const images: string[] = [];
-                querySnapshot.forEach((doc) => {
-                    const data = doc.data();
-                    if (data.imageUrl) {
-                        images.push(data.imageUrl);
-                    }
-                });
+            const images = querySnapshot.docs.map((doc) => doc.data().imageUrl || '');
+            setUserImages(images);
+        } catch (error) {
+            console.error('사용자 이미지 가져오는 중 오류 발생:', error);
+        }
+    };
 
-                setUserImages(images);
-            } catch (error) {
-                console.error('사용자 이미지 가져오는 중 오류 발생:', error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchUserImages();
-        fetchBMIData();
-
-    }, [userId]);
-
-    useEffect(() => {
+    // Cloudinary 스크립트 로드
+    const loadCloudinaryScript = () => {
         if (window.cloudinary) {
             setIsScriptLoaded(true);
             return;
@@ -88,11 +72,18 @@ const ChangeBody = () => {
         return () => {
             document.body.removeChild(script);
         };
-    }, []);
+    };
 
+    useEffect(() => {
+        fetchUserImages();
+        fetchBMIData();
+        loadCloudinaryScript();
+    }, [userId]);
+
+    // 이미지 업로드
     const handleUpload = () => {
         if (!isScriptLoaded) {
-            console.error('cloudinary script 가 아직 로드되지 않았습니다. ');
+            console.error('cloudinary script가 아직 로드되지 않았습니다.');
             return;
         }
 
@@ -120,7 +111,7 @@ const ChangeBody = () => {
                             timestamp: new Date(),
                         });
 
-                        setUserImages((prevImages) => [...prevImages, uploadedUrl]); // 상태 즉시 갱신
+                        setUserImages((prevImages) => [...prevImages, uploadedUrl]);
                     } catch (firestoreError) {
                         console.error('Firestore에 이미지 저장 중 오류 발생:', firestoreError);
                     }
@@ -131,145 +122,85 @@ const ChangeBody = () => {
         widget.open();
     };
 
-
-    const handleNext = () => {
-        setCurrentIndex((prevIndex) => (prevIndex + 1) % userImages.length);
+    // 이미지 캐러셀 상태 계산
+    const getCarouselClass = (index: number) => {
+        if (index === currentIndex) return styles.activeImage;
+        if (index === (currentIndex - 1 + userImages.length) % userImages.length) return styles.prevImage;
+        if (index === (currentIndex + 1) % userImages.length) return styles.nextImage;
+        return styles.hiddenImage;
     };
 
-    const handlePrev = () => {
-        setCurrentIndex((prevIndex) => (prevIndex - 1 + userImages.length) % userImages.length);
-    };
-
-
-
+    // 차트 데이터와 옵션
     const analyzeData = {
-        labels:['bmi'],
+        labels: ['BMI'],
         datasets: [
             {
                 label: `사용자의 BMI: ${bmi || '데이터 없음'}`,
-                data: [bmi], // 평균 데이터
-                borderWidth:1,
+                data: [bmi],
+                borderWidth: 1,
                 barThickness: 30,
                 backgroundColor: '#ADD8E6',
             },
         ],
     };
 
-    // 옵션지정하기
     const analyzeOptions = {
-        indexAxis: "y",// 가로 방향 막대 그래프
+        indexAxis: 'y',
         responsive: true,
-        maintainAspectRatio: false, // 크기 비율을 강제로 조정 가능하도록 설정
+        maintainAspectRatio: false,
         plugins: {
-            legend: { // 범례 설정
-                display: true, // 범례 활성
-            },
+            legend: { display: true },
             tooltip: {
                 callbacks: {
-                    label: (context: any) => `BMI: ${context.raw}`, // 툴팁에 BMI 값 표시
+                    label: (context: any) => `BMI: ${context.raw}`,
                 },
             },
         },
         scales: {
             x: {
-                type: "linear", // X축을 숫자형 스케일로 설정
-                min: 10, // X축 최소값
-                max: 55, // X축 최대값
-                ticks: {
-                    stepSize: 5, // X축 값 간격
-                    callback: (value: number) => {
-                        // X축 커스텀 레이블
-                        const labelsMap: { [key: number]: string } = {
-                            10: '10',
-                            18.5: '18.5(저체중)',
-                            25: '25 (정상)',
-                            30: '30(과체중)',
-                            55: '55',
-                        };
-                        return labelsMap[value] || value.toString();
-                    },
-                },
-                title: { display: true, text: 'BMI 값' }, // X축 제목
+                type: 'linear',
+                min: 10,
+                max: 55,
+                ticks: { stepSize: 5 },
             },
             y: {
-                type: 'category', // Y축을 카테고리형으로 설정
-                labels: ['BMI'], // Y축 레이블
-                title: { display: false }, // Y축 제목 제거
+                type: 'category',
+                labels: ['BMI'],
             },
         },
     };
 
-    // @ts-ignore
     return (
         <DashboardLayout>
             <div>
-                <h1 style={headerStyles.introTitle}>
-                    오늘도 열심히 운동하셨군요!
-                </h1>
-                <p style={headerStyles.introSubTitle}>
-                    열심히 운동한 당신 !
-                    매일매일 기록하는 오운완 사진을 확인해보세요
-                </p>
+                <h1 style={headerStyles.introTitle}>오늘도 열심히 운동하셨군요!</h1>
                 <div className={styles.analyzeSection}>
-                    <h2 className={styles.analyzeTitle}>체형 분석</h2>
-                    <div className={styles.chartContainer}>
-                        <Bar data={analyzeData} options={analyzeOptions}/>
-                    </div>
+                    <Bar data={analyzeData} options={analyzeOptions} />
                 </div>
-
-
             </div>
-
-
             <div className={styles.pageContainer}>
                 <div className={styles.carouselContainer}>
                     {userImages.length > 0 ? (
                         <>
-                            {/* 이전 버튼 */}
-                            <button className={`${styles.arrowButton} ${styles.left}`} onClick={handlePrev}>
+                            <button className={`${styles.arrowButton} ${styles.left}`} onClick={() => setCurrentIndex((currentIndex - 1 + userImages.length) % userImages.length)}>
                                 ❮
                             </button>
-
-                            {/* 이미지 렌더링 */}
-                            {userImages.map((image, index) => {
-                                const position =
-                                    index === currentIndex
-                                        ? `${styles.activeImage}`
-                                        : index === (currentIndex - 1 + userImages.length) % userImages.length
-                                            ? `${styles.prevImage}`
-                                            : index === (currentIndex + 1) % userImages.length
-                                                ? `${styles.nextImage}`
-                                                : `${styles.hiddenImage}`;
-
-                                return (
-                                    <div key={index} className={`${styles.imageContainer} ${position}`}>
-                                        <img src={image} alt={`이미지 ${index}`} className={styles.image}/>
-                                    </div>
-                                );
-                            })}
-
-                            {/* 다음 버튼 */}
-                            <button className={`${styles.arrowButton} ${styles.right}`} onClick={handleNext}>
+                            {userImages.map((image, index) => (
+                                <div key={index} className={`${styles.imageContainer} ${getCarouselClass(index)}`}>
+                                    <img src={image} alt={`이미지 ${index}`} className={styles.image} />
+                                </div>
+                            ))}
+                            <button className={`${styles.arrowButton} ${styles.right}`} onClick={() => setCurrentIndex((currentIndex + 1) % userImages.length)}>
                                 ❯
                             </button>
                         </>
                     ) : (
-                        <p className="text-center text-gray-500">
-                            아직 사진이 없습니다. 지금 사진을 올려주세요!
-                        </p>
+                        <p>아직 사진이 없습니다. 지금 사진을 올려주세요!</p>
                     )}
                 </div>
-
-                {/* 이미지 업로드 버튼 */}
-                <div className={styles.ButtonBox}>
-                    <button
-                        onClick={handleUpload}
-                        disabled={!isScriptLoaded}
-                        className={styles.uploadButton}
-                    >
-                        {isScriptLoaded ? '이미지 업로드' : '로딩 중...'}
-                    </button>
-                </div>
+                <button onClick={handleUpload} disabled={!isScriptLoaded}>
+                    {isScriptLoaded ? '이미지 업로드' : '로딩 중...'}
+                </button>
             </div>
         </DashboardLayout>
     );

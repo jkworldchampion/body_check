@@ -1,42 +1,42 @@
-// BMICalculator.tsx
 import React, { useEffect, useState } from "react";
-import useSignupStore from "@/store/useSignupStore";
+import {useUserStore} from "@/store/userStore"; // userStore 사용
 import { getBMICategory } from "@/data/bmiCategories"; // 범주 매핑 로직 가져오기
 import { getAgeGroup } from "../componenets/AgeCalculator"; // 연령대 계산 유틸리티 가져오기
 
 export const BMICalculator: React.FC = () => {
-    const { height, weight, setField, gender, age } = useSignupStore(); // Zustand 상태 가져오기
+    const { userData, updateUser } = useUserStore(); // Zustand에서 사용자 데이터 및 업데이트 함수 가져오기
     const [bmi, setBMI] = useState<number | null>(null);
     const [bmiCategory, setBMICategory] = useState<string | null>(null);
 
     useEffect(() => {
-        if (height > 0 && weight > 0) {
-            const calculatedBMI = weight / ((height / 100) * (height / 100)); // height를 m로 변환
-            setBMI(Number(calculatedBMI.toFixed(2))); // 소수점 2자리까지 표시
-            setField("bmi", Number(calculatedBMI.toFixed(2))); // 상태에 BMI 저장
+        const calculateAndUpdateBMI = async () => {
+            if (userData && userData.height > 0 && userData.weight > 0) {
+                const calculatedBMI = userData.weight / ((userData.height / 100) * (userData.height / 100)); // BMI 계산
+                const roundedBMI = Number(calculatedBMI.toFixed(2)); // 소수점 2자리까지
 
-            // 연령대 및 범주 계산
-            const ageGroup = getAgeGroup(age); // 나이 기반 연령대 계산
-            const category = getBMICategory(gender as "남성" | "여성", ageGroup, calculatedBMI);
-            setBMICategory(category);
+                setBMI(roundedBMI); // BMI 상태 업데이트
 
-            if (gender === "남성" || gender === "여성") {
-                const ageGroup = getAgeGroup(age);
-                const category = getBMICategory(gender, ageGroup, calculatedBMI);
+                // Firestore와 Zustand 업데이트
+                try {
+                    await updateUser(userData.id as string, { bmi: roundedBMI });
+                    console.log("BMI가 Firestore에 업데이트되었습니다:", roundedBMI);
+                } catch (error) {
+                    console.error("BMI 업데이트 오류:", error);
+                }
+
+                // BMI 범주 계산
+                const ageGroup = getAgeGroup(userData.age); // 나이 기반 연령대 계산
+                const category = getBMICategory(userData.gender as "남성" | "여성", ageGroup, calculatedBMI);
                 setBMICategory(category);
             }
-        }
-    }, [height, weight, setField, gender, age]);
+        };
+
+        calculateAndUpdateBMI();
+    }, [userData, updateUser]);
 
     return (
         <div>
-            {bmi ? (
-                <p>
-                    회원님의 BMI는 <strong>{bmi}</strong>입니다. 현재 <strong>{bmiCategory}</strong> 범주에 속합니다.
-                </p>
-            ) : (
-                <p>BMI를 계산 중입니다...</p>
-            )}
+
         </div>
     );
 };

@@ -1,12 +1,20 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import DashboardLayout from "@/app/componenets/dashboardLayout";
 
 export default function RecordingExercise() {
+    const [serverResponse, setServerResponse] = useState<string | null>(null); // 서버 응답 상태
 
-    const handleButtonClick = () => {
-        window.location.href = "http://202.30.29.168:9888"; // 이동할 URL
+    const handleButtonClick = async () => {
+        try {
+            const response = await fetch("http://202.30.29.168:9888"); // 이동할 URL 요청
+            const data = await response.text();
+            setServerResponse(data); // 서버 응답 저장
+        } catch (error) {
+            console.error("서버 요청 실패:", error);
+            setServerResponse("서버 연결에 실패했습니다.");
+        }
     };
 
     return (
@@ -18,7 +26,7 @@ export default function RecordingExercise() {
                     <h1 style={{ fontSize: "40px", fontWeight: "bold", marginBottom: "20px" }}>
                         BODY : CHECK
                     </h1>
-                    <p style={{ fontSize: "20px", lineHeight: "1.5", marginBottom:"100px", color: "#333" }}>
+                    <p style={{ fontSize: "20px", lineHeight: "1.5", marginBottom: "100px", color: "#333" }}>
                         이제 운동할 준비가 되셨나요?<br />
                         <strong>BODY : CHECK</strong>는 실시간으로 운동을 체크해드려요.
                     </p>
@@ -35,7 +43,7 @@ export default function RecordingExercise() {
                             fontSize: "16px",
                         }}
                     >
-                        {isLoading ? "서버 연결 중..." : "서버 접속하기"}
+                        서버 연결
                     </button>
 
                     {/* 서버 응답 */}
@@ -65,8 +73,6 @@ export default function RecordingExercise() {
                         style={{
                             display: "grid",
                             gridTemplateColumns: "1fr 1fr",
-                            // 두 개의 열로 구성
-                            // fr = fraction 가용가능한 공간을 비율로 나눠서 사용함
                             gap: "30px",
                             marginBottom: "40px",
                         }}
@@ -90,13 +96,11 @@ export default function RecordingExercise() {
                                     width: "300px",
                                     height: "300px",
                                     margin: "0 auto",
-                                    fontWeight:"lighter",
+                                    fontWeight: "lighter",
                                     fontSize: "30px",
                                     textAlign: "center",
                                     backgroundColor: ["2", "3"].includes(item.step) ? "#030303" : "",
-                                    color:["2","3"].includes(item.step) ? "#fff" : "black",
-
-
+                                    color: ["2", "3"].includes(item.step) ? "#fff" : "black",
                                 }}
                             >
                                 <span style={{ fontSize: "50px", marginBottom: "5px" }}>
