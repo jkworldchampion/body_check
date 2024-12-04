@@ -3,10 +3,13 @@
 import React, { useEffect, useState } from "react";
 import useImageStore from "@/store/imageStore";
 
+
 interface UploadOptions {
     cloudName: string;
     uploadPreset: string;
     sources: string[];
+    cropping: boolean;
+    transformation?: Array<Record<string, any>>;
 }
 
 export default function HandleUpload() {
@@ -43,6 +46,15 @@ export default function HandleUpload() {
             cloudName: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME!,
             uploadPreset: process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!,
             sources: ["local", "url", "camera", "image_search"], // 지원하는 업로드 소스
+            cropping: true, // 업로드 전에 사용자가 자를 수 있는 옵션 추가
+            transformation: [
+                {
+                    width: 500,
+                    height: 500,
+                    crop: "fill",
+                    gravity: "auto",
+                },
+            ]
         };
 
         try {

@@ -1,4 +1,5 @@
 
+
 .analyzeSection {
     margin-top: 80px;
     padding: 20px;
@@ -16,19 +17,77 @@
 
 .chartContainer {
     margin-bottom: 40px;
-    padding: 10px;
+    width: 100%;
+    align-items:center;
     background: #fff;
     border-radius: 10px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
+
+
+.chartSection {
+    margin-bottom: 40px;
+    height: 200px;
+    width:100%;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content:flex-start;
+    padding-left: 20px;
+
+}
+
+/*h2 글자 정렬 */
+.h2Font {
+    font-family: 'Montserrat', sans-serif;
+    font-weight:400;
+    font-size:20px;
+    text-align:left;
+    margin:0;
+}
+
 .pageContainer {
-    height: 100vh;
+    margin-top: 200px;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     background-color: #e9e9e9;
 }
+.boxContainer {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    margin-bottom:20px;
+    justify-content: center;
+    gap:80px;
+}
+.imageBox {
+    width: 500px;
+    height: 500px; /* 박스 크기 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: row;
+    background-color: #e0e0e0; /* 빈 박스 배경 */
+    color: #888888; /* 텍스트 색 */
+    font-size: 1rem;
+    font-weight: bold;
+    border-radius: 10px;
+    overflow: hidden; /* 넘치는 이미지 숨김 */
+    position: relative;
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1); /* 살짝 그림자 */
+}
+.image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* 이미지 비율 유지하며 박스 채우기 */
+    border-radius: 10px;
+}
+
 
 /* 캐러셀 컨테이너 */
 .carouselContainer {
@@ -38,10 +97,11 @@
     align-items: center;
     width: 100%;
     max-width: 900px;
-    height: 900px;
+    height: 500px; /* 높이를 적절히 줄임 */
     perspective: 1000px;
     overflow: hidden;
 }
+
 
 /* 이미지 컨테이너 */
 .imageContainer {
@@ -77,14 +137,7 @@
     opacity: 0;
 }
 
-/* 이미지 */
-.image {
-    width: 100%;
-    height: 80%;
-    object-fit: cover;
-    border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
+
 
 /* 화살표 버튼 */
 .arrowButton {
@@ -124,29 +177,33 @@
 .ButtonBox {
     align-items: center;
     display: flex;
-    width: 100%;
+    width:200px;
     margin-top: 20px;
+
+
+
 }
 .uploadButton {
-    background-color: #FFFFFF;
+    background-color:transparent;
+    border: #030303 3px solid;
     color: #030303;
     font-size: 1.2rem;
     font-weight: bold;
     padding: 1rem 2rem ;
-    border-style:solid;
-    border-radius: 8px;
-    border-color:#030303;
+    border-radius: 50px;
     cursor: pointer;
     transition: background-color 0.3s ease;
     width: 100%;
     max-width: 900px;
     margin: 0 auto;
+    margin-top: 80px;
     margin-bottom:30px;
 
 }
 
 .uploadButton:hover {
-    background-color: #0056b3; /* 호버 시 더 진한 파란색 */
+    background-color: #CEDFF6;
+    border: #CEDFF6;
 }
 
 .uploadButton:disabled {

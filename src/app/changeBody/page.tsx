@@ -2,26 +2,36 @@
 
 import React, { useEffect, useState } from 'react';
 import { firestore } from '@/app/firestore/firebase';
-import { collection, query, where, getDocs, addDoc, doc, getDoc } from 'firebase/firestore';
+import {collection, query, where, getDocs, addDoc, doc, getDoc, orderBy} from 'firebase/firestore';
 import useAuthStore from '@/store/useAuthStore';
 import DashboardLayout from '@/app/componenets/dashboardLayout';
 import styles from './changeBody.module.css';
 import headerStyles from '@/app/utils/headerStyles';
-import { BarElement, CategoryScale, Chart as ChartJS, Legend, LinearScale, Title, Tooltip } from 'chart.js';
-import annotationPlugin from 'chartjs-plugin-annotation';
 import { Bar } from 'react-chartjs-2';
+import { FatCalculator } from '../componenets/FatCalculator';
+import { AgeCalculator } from '../componenets/AgeCalculator';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, annotationPlugin);
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-const ChangeBody = () => {
+interface UserData {
+    weight: number;
+    height: number;
+    gender: string;
+    age: number;
+}
+
+const Changebody = () => {
     const userId = useAuthStore((state) => state.userId);
     const [userImages, setUserImages] = useState<string[]>([]);
-    const [currentIndex, setCurrentIndex] = useState(0);
-    const [bmi, setBMI] = useState<number | null>(null);
+    const [visibleImages, setVisibleImages] = useState<number>(3);
+    const [userData, setUserData] = useState<UserData | null>(null);
+    const [calculatedData, setCalculatedData] = useState<any>(null);
+    const [weight, setWeight] = useState(0);
     const [isScriptLoaded, setIsScriptLoaded] = useState(false);
 
-    // BMI 데이터 가져오기
-    const fetchBMIData = async () => {
+    // Firestore에서 사용자 데이터 가져오기
+    const fetchUserData = async () => {
         if (!userId) return;
 
         try {
@@ -29,23 +39,29 @@ const ChangeBody = () => {
             const userDoc = await getDoc(userDocRef);
 
             if (userDoc.exists()) {
-                const userData = userDoc.data();
-                setBMI(userData.bmi || 0); // 기본값 설정
+                const data = userDoc.data() as UserData;
+                setUserData(data);
+
+                // BMI 및 기타 데이터 계산
+                const fatData = FatCalculator(data.weight, data.height, data.gender, data.age);
+                const ageGroup = AgeCalculator(data.age);
+
+                setCalculatedData({...fatData, ageGroup});
             } else {
                 console.error('사용자 데이터를 찾을 수 없습니다.');
             }
         } catch (error) {
-            console.error('BMI 데이터를 가져오는 중 오류가 발생했습니다:', error);
+            console.error('데이터 가져오는 중 오류 발생:', error);
         }
     };
 
-    // 사용자 이미지 가져오기
+    // Firestore에서 사용자 이미지 가져오기
     const fetchUserImages = async () => {
         if (!userId) return;
 
         try {
             const imagesRef = collection(firestore, 'images');
-            const q = query(imagesRef, where('userId', '==', userId));
+                const q = query(imagesRef, where('userId', '==', userId), orderBy('timestamp', 'asc')); // 저장된 순서대로 정렬
             const querySnapshot = await getDocs(q);
 
             const images = querySnapshot.docs.map((doc) => doc.data().imageUrl || '');
@@ -75,15 +91,15 @@ const ChangeBody = () => {
     };
 
     useEffect(() => {
+        fetchUserData();
         fetchUserImages();
-        fetchBMIData();
         loadCloudinaryScript();
     }, [userId]);
 
     // 이미지 업로드
     const handleUpload = () => {
         if (!isScriptLoaded) {
-            console.error('cloudinary script가 아직 로드되지 않았습니다.');
+            console.error('Cloudinary script가 아직 로드되지 않았습니다.');
             return;
         }
 
@@ -101,7 +117,6 @@ const ChangeBody = () => {
 
                 if (result.event === 'success') {
                     const uploadedUrl = result.info.secure_url;
-                    console.log('업로드된 이미지 URL:', uploadedUrl);
 
                     try {
                         const imagesRef = collection(firestore, 'images');
@@ -122,88 +137,155 @@ const ChangeBody = () => {
         widget.open();
     };
 
-    // 이미지 캐러셀 상태 계산
-    const getCarouselClass = (index: number) => {
-        if (index === currentIndex) return styles.activeImage;
-        if (index === (currentIndex - 1 + userImages.length) % userImages.length) return styles.prevImage;
-        if (index === (currentIndex + 1) % userImages.length) return styles.nextImage;
-        return styles.hiddenImage;
-    };
-
-    // 차트 데이터와 옵션
-    const analyzeData = {
-        labels: ['BMI'],
+    // 그래프 데이터 생성 함수
+    const generateChartData = (label: string, value: number, color: string) => ({
+        labels: [label],
         datasets: [
             {
-                label: `사용자의 BMI: ${bmi || '데이터 없음'}`,
-                data: [bmi],
+                label,
+                data: [value],
+                backgroundColor: [color],
                 borderWidth: 1,
-                barThickness: 30,
-                backgroundColor: '#ADD8E6',
             },
         ],
-    };
+    });
 
-    const analyzeOptions = {
-        indexAxis: 'y',
+    const chartOptions = {
         responsive: true,
+        indexAxis: 'y',
         maintainAspectRatio: false,
-        plugins: {
-            legend: { display: true },
-            tooltip: {
-                callbacks: {
-                    label: (context: any) => `BMI: ${context.raw}`,
-                },
+
+        x: {
+            ticks: {
+                stepSize: 5, // 눈금 간격 설정
+                callback: (value: any) => `${value}`, // 눈금 레이블 커스터마이징
             },
-        },
-        scales: {
-            x: {
-                type: 'linear',
-                min: 10,
-                max: 55,
-                ticks: { stepSize: 5 },
-            },
-            y: {
-                type: 'category',
-                labels: ['BMI'],
-            },
+            min: 0, // 최소값 설정
+            max: 50, // 최대값 설정
         },
     };
 
+    // @ts-ignore
+    // @ts-ignore
     return (
         <DashboardLayout>
             <div>
-                <h1 style={headerStyles.introTitle}>오늘도 열심히 운동하셨군요!</h1>
-                <div className={styles.analyzeSection}>
-                    <Bar data={analyzeData} options={analyzeOptions} />
-                </div>
+                <h1 style={headerStyles.introTitle}>오늘도 열심히 운동하셨군요! 💪</h1>
+
+                {calculatedData && (
+                    <>
+                        <div className={styles.chartSection}>
+                            <h2 className={styles.h2Font}>BMI</h2>
+                            <div style={{height: '200px', width: '100%'}}>
+                                <Bar
+                                    data={generateChartData('BMI', calculatedData.bmi, '#CEDFF6')}
+                                    options={chartOptions}
+                                />
+                            </div>
+                        </div>
+
+                        <div className={styles.chartSection}>
+                            <h2 className={styles.h2Font}>체지방률 (%)</h2>
+                            <div style={{height: '200px', width: '100%'}}>
+                                <Bar
+                                    data={generateChartData('체지방률', calculatedData.fatPercentage, '#CEDFF6')}
+                                    options={chartOptions}
+                                />
+                            </div>
+                        </div>
+
+                        <div className={styles.chartSection}>
+                            <h2 className={styles.h2Font}>체중 (kg)</h2>
+                            <div style={{height: '200px', width: '100%'}}>
+                                <Bar
+                                    data={generateChartData('체중', userData!.weight, '#CEDFF6')} // Firestore의 weight 사용
+                                    options={{
+                                        responsive: true,
+                                        maintainAspectRatio: false, // 고정 높이를 유지하기 위해 비율 유지 비활성화
+                                        indexAxis: 'y',
+                                        plugins: {
+                                            legend: {
+                                                position: 'top',
+                                            },
+                                        },
+                                        x: {
+                                            ticks: {
+                                                stepSize: 10, // 눈금 간격 설정
+                                                align: 'start'
+                                            },
+                                            min: 0, // 최소값 설정
+                                            max: 100, // 최대값 설정
+                                        },
+                                    }}
+                                />
+                            </div>
+                        </div>
+                    </>
+                )}
             </div>
+
             <div className={styles.pageContainer}>
-                <div className={styles.carouselContainer}>
-                    {userImages.length > 0 ? (
-                        <>
-                            <button className={`${styles.arrowButton} ${styles.left}`} onClick={() => setCurrentIndex((currentIndex - 1 + userImages.length) % userImages.length)}>
-                                ❮
-                            </button>
-                            {userImages.map((image, index) => (
-                                <div key={index} className={`${styles.imageContainer} ${getCarouselClass(index)}`}>
-                                    <img src={image} alt={`이미지 ${index}`} className={styles.image} />
-                                </div>
-                            ))}
-                            <button className={`${styles.arrowButton} ${styles.right}`} onClick={() => setCurrentIndex((currentIndex + 1) % userImages.length)}>
-                                ❯
-                            </button>
-                        </>
-                    ) : (
-                        <p>아직 사진이 없습니다. 지금 사진을 올려주세요!</p>
-                    )}
+                <h2 className={styles.h2Font}>운동 사진</h2>
+
+                <div>
+                    {Array.from({length: Math.ceil(visibleImages / 3)}).map((_, rowIndex) => (
+                        <div key={rowIndex} className={styles.boxContainer}>
+                            {userImages
+                                .slice(rowIndex * 3, rowIndex * 3 + 3)
+                                .map((image, index) => (
+                                    <div key={index} className={styles.imageBox}>
+                                        <img src={image} alt={`운동 사진 ${index}`} className={styles.image}/>
+                                    </div>
+                                ))}
+
+                            {/* 빈 박스 로직 */}
+                            {userImages.slice(rowIndex * 3, rowIndex * 3 + 3).length < 3 &&
+                                Array(3 - userImages.slice(rowIndex * 3, rowIndex * 3 + 3).length)
+                                    .fill(0)
+                                    .map((_, emptyIndex) => (
+                                        <div key={`empty-${rowIndex}-${emptyIndex}`} className={styles.imageBox}>
+                                            <span>사진을 첨부하세요</span>
+                                        </div>
+                                    ))}
+                        </div>
+                    ))}
                 </div>
-                <button onClick={handleUpload} disabled={!isScriptLoaded}>
-                    {isScriptLoaded ? '이미지 업로드' : '로딩 중...'}
-                </button>
+
+                {/* 버튼 영역 */}
+                <div className={styles.ButtonBox}>
+                    {userImages.length > visibleImages ? (
+                        <button
+                            onClick={() => setVisibleImages((prev) => prev + 3)} // "사진 더보기" 버튼
+                            className={styles.moreButton}
+                        >
+                            사진 더보기...
+                        </button>
+                    ) : visibleImages > 3 ? ( // 모든 사진이 표시된 경우 "접어두기" 버튼 활성화
+                        <button
+                            onClick={() => setVisibleImages(3)} // 초기 상태로 리셋
+                            className={styles.collapseButton}
+                        >
+                            접어두기
+                        </button>
+                    ) : null}
+                </div>
+
+                {/* 업로드 버튼 */}
+                <div className={styles.ButtonBox}>
+                    <button
+                        onClick={handleUpload}
+                        disabled={!isScriptLoaded}
+                        className={styles.uploadButton}
+                    >
+                        이미지 업로드
+                    </button>
+                </div>
             </div>
+
+
         </DashboardLayout>
     );
 };
 
-export default ChangeBody;
+
+export default Changebody;

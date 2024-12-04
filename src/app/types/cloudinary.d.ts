@@ -21,6 +21,8 @@ interface CloudinaryWidgetOptions {
     uploadPreset: string;
     sources: string[];
     [key: string]: any;
+    cropping?: boolean; // 추가
+    transformation?: Array<Record<string, any>>;
 }
 
 export {};  // 모듈로 만들기 위한 빈 export

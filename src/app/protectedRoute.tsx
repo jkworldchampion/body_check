@@ -1,18 +1,19 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import React, {useEffect, useRef} from "react";
+import {useRouter} from "next/navigation";
 import useAuthStore from "@/store/useAuthStore";
-import { auth } from "@/app/firestore/firebase"; // 수정: Firebase 초기화된 auth 객체 가져오기
-import { onAuthStateChanged } from "firebase/auth";
+import {auth} from "@/app/firestore/firebase"; // 수정: Firebase 초기화된 auth 객체 가져오기
+import {onAuthStateChanged} from "firebase/auth";
 
 interface ProtectedRouteProps {
-    children: React.ReactNode;
+    children: React.ReactNode,
+    isRestricted?: boolean
 }
 
-export default function ProtectedRoute({ children }: ProtectedRouteProps) {
+export default function ProtectedRoute({children, isRestricted}: ProtectedRouteProps) {
     const router = useRouter();
-    const { isAuthenticated, login, logout } = useAuthStore();
+    const {isAuthenticated, login, logout} = useAuthStore();
     const isInitialized = useRef(false); // 중복 호출 방지용
 
     useEffect(() => {
