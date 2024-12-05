@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Workout Tracker</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+        }
+        video, canvas {
+            border: 2px solid #ccc;
+            border-radius: 10px;
+        }
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .controls input, .controls select, .controls button {
+            padding: 10px;
+            margin: 5px;
+            font-size: 1em;
+            width: 250px;
+        }
+        #counter {
+            margin-top: 20px;
+            font-size: 2em;
+            color: #333;
+        }
+    </style>
+    <!-- MediaPipe Pose 라이브러리 포함 -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.4/pose.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.4/drawing_utils.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.4/camera_utils.min.js"></script>
+</head>
+<body>
+    <h1>Workout Tracker</h1>
+    <video id="video" width="640" height="480" autoplay muted></video>
+    <canvas id="overlay" width="640" height="480"></canvas>
+
+    <div class="controls">
+        <input type="text" id="user_id" placeholder="사용자 ID" required>
+        <select id="workout_type">
+            <option value="benchpress">벤치프레스</option>
+            <option value="squat">스쿼트</option>
+            <option value="deadlift">데드리프트</option>
+        </select>
+        <input type="number" id="weight" placeholder="무게 (kg)" min="0" step="0.1" required>
+        <button id="start_button">운동 시작</button>
+        <button id="save_set_button" disabled>세트 저장</button>
+        <button id="complete_button" disabled>운동 완료</button>
+    </div>
+
+    <div id="counter">Reps: 0</div>
+
+    <script>
+        let repCount = 0;
+        let stage = null;
+        let workoutType = "";
+        let userId = "";
+        let weight = 0;
+
+        const videoElement = document.getElementById('video');
+        const canvasElement = document.getElementById('overlay');
+        const canvasCtx = canvasElement.getContext('2d');
+
+        const startButton = document.getElementById('start_button');
+        const saveSetButton = document.getElementById('save_set_button');
+        const completeButton = document.getElementById('complete_button');
+        const counterElement = document.getElementById('counter');
+
+        const userIdInput = document.getElementById('user_id');
+        const workoutTypeSelect = document.getElementById('workout_type');
+        const weightInput = document.getElementById('weight');
+
+        // MediaPipe Pose 초기화
+        const pose = new Pose.Pose({
+            locateFile: (file) => {
+                return `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.4/${file}`;
+            }
+        });
+
+        pose.setOptions({
+            modelComplexity: 1,
+            smoothLandmarks: true,
+            minDetectionConfidence: 0.5,
+            minTrackingConfidence: 0.5
+        });
+
+        pose.onResults(onResults);
+
+        // 카메라 초기화
+        const camera = new Camera.Camera(videoElement, {
+            onFrame: async () => {
+                await pose.send({image: videoElement});
+            },
+            width: 640,
+            height: 480
+        });
+
+        camera.start();
+
+        function calculateAngle(a, b, c) {
+            const radians = Math.atan2(c.y - b.y, c.x - b.x) - Math.atan2(a.y - b.y, a.x - b.x);
+            let angle = Math.abs(radians * 180.0 / Math.PI);
+            if (angle > 180.0) {
+                angle = 360 - angle;
+            }
+            return angle;
+        }
+
+        function onResults(results) {
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+
+            if (results.poseLandmarks) {
+                // 포즈 랜드마크 그리기
+                Pose.drawConnectors(canvasCtx, results.poseLandmarks, Pose.POSE_CONNECTIONS,
+                                    {color: '#00FF00', lineWidth: 2});
+                Pose.drawLandmarks(canvasCtx, results.poseLandmarks,
+                                   {color: '#FF0000', lineWidth: 1});
+
+                // 운동 유형에 따른 필요한 랜드마크 추출 및 각도 계산
+                let angle = 0;
+                try {
+                    if (workoutType === "benchpress") {
+                        const leftElbow = results.poseLandmarks[Pose.PoseLandmark.LEFT_ELBOW];
+                        const leftShoulder = results.poseLandmarks[Pose.PoseLandmark.LEFT_SHOULDER];
+                        const leftWrist = results.poseLandmarks[Pose.PoseLandmark.LEFT_WRIST];
+                        angle = calculateAngle(leftShoulder, leftElbow, leftWrist);
+                    } else if (workoutType === "squat") {
+                        const leftKnee = results.poseLandmarks[Pose.PoseLandmark.LEFT_KNEE];
+                        const leftHip = results.poseLandmarks[Pose.PoseLandmark.LEFT_HIP];
+                        const leftAnkle = results.poseLandmarks[Pose.PoseLandmark.LEFT_ANKLE];
+                        angle = calculateAngle(leftHip, leftKnee, leftAnkle);
+                    } else if (workoutType === "deadlift") {
+                        const leftShoulder = results.poseLandmarks[Pose.PoseLandmark.LEFT_SHOULDER];
+                        const leftHip = results.poseLandmarks[Pose.PoseLandmark.LEFT_HIP];
+                        const leftKnee = results.poseLandmarks[Pose.PoseLandmark.LEFT_KNEE];
+                        angle = calculateAngle(leftShoulder, leftHip, leftKnee);
+                    }
+
+                    // 각도에 따른 반복 횟수 카운팅 로직
+                    if (workoutType === "benchpress" || workoutType === "deadlift") {
+                        if (angle > 160) {
+                            stage = "down";
+                        }
+                        if (angle < 50 && stage === 'down') {
+                            stage = "up";
+                            repCount += 1;
+                            counterElement.innerText = `Reps: ${repCount}`;
+                        }
+                    } else if (workoutType === "squat") {
+                        if (angle > 160) {
+                            stage = "up";
+                        }
+                        if (angle < 90 && stage === 'up') {
+                            stage = "down";
+                            repCount += 1;
+                            counterElement.innerText = `Reps: ${repCount}`;
+                        }
+                    }
+                } catch (error) {
+                    console.error("랜드마크 처리 중 오류 발생:", error);
+                }
+            }
+            canvasCtx.restore();
+        }
+
+        startButton.addEventListener('click', () => {
+            userId = userIdInput.value.trim();
+            workoutType = workoutTypeSelect.value;
+            weight = parseFloat(weightInput.value);
+
+            if (!userId) {
+                alert("사용자 ID를 입력해주세요.");
+                return;
+            }
+            if (isNaN(weight) || weight <= 0) {
+                alert("유효한 무게를 입력해주세요.");
+                return;
+            }
+
+            repCount = 0;
+            stage = null;
+            counterElement.innerText = `Reps: ${repCount}`;
+            saveSetButton.disabled = false;
+            completeButton.disabled = false;
+
+            alert("운동을 시작합니다!");
+        });
+
+        saveSetButton.addEventListener('click', () => {
+            if (repCount === 0) {
+                alert("저장할 반복 횟수가 없습니다.");
+                return;
+            }
+
+            fetch('http://your_server_ip:8000/save_set', {  // 서버의 IP와 포트로 변경
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    user_id: userId,
+                    workout_type: workoutType,
+                    reps: repCount,
+                    weight: weight
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "success") {
+                    alert(data.message);
+                    repCount = 0;
+                    stage = null;
+                    counterElement.innerText = `Reps: ${repCount}`;
+                } else {
+                    alert(`오류: ${data.message}`);
+                }
+            })
+            .catch((error) => {
+                console.error('오류:', error);
+                alert("세트 저장에 실패했습니다.");
+            });
+        });
+
+        completeButton.addEventListener('click', () => {
+            if (repCount > 0) {
+                alert("운동을 완료하기 전에 마지막 세트를 저장해주세요.");
+                return;
+            }
+
+            fetch('http://your_server_ip:8000/complete_workout', {  // 서버의 IP와 포트로 변경
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    user_id: userId,
+                    workout_type: workoutType
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "success") {
+                    alert(data.message);
+                    repCount = 0;
+                    stage = null;
+                    counterElement.innerText = `Reps: ${repCount}`;
+                    saveSetButton.disabled = true;
+                    completeButton.disabled = true;
+                } else {
+                    alert(`오류: ${data.message}`);
+                }
+            })
+            .catch((error) => {
+                console.error('오류:', error);
+                alert("운동 완료에 실패했습니다.");
+            });
+        });
+    </script>
+</body>
+</html>

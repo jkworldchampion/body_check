@@ -1,3 +1,5 @@
+<!-- templates/video_feed.html -->
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -10,38 +12,43 @@
             flex-direction: column;
             align-items: center;
             justify-content: flex-start;
-            height: auto;
+            height: 100vh; /* 전체 화면 높이 사용 */
             margin: 0;
             font-family: Arial, sans-serif;
             background-color: #f0f2f5;
             padding: 20px;
+            box-sizing: border-box;
         }
         h1 {
             color: #333;
             margin-bottom: 20px;
         }
         .video-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            position: relative; /* 자식 요소의 절대 위치 기준 */
+            width: 640px;
+            height: 480px;
+            border: 2px solid #ccc;
+            border-radius: 10px;
+            overflow: hidden; /* 자식 요소가 컨테이너를 벗어나지 않도록 */
             margin: 20px 0;
         }
-        video {
-            width: 640px;
-            height: 480px;
-            border: 2px solid #ccc;
-            border-radius: 10px;
-            object-fit: contain;
-            margin: 10px 0;
+        /* 동일한 크기와 위치를 유지하도록 설정 */
+        video, #processedImage {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* 이미지가 컨테이너를 채우도록 */
+            transform: scaleX(-1); /* 좌우 반전 */
         }
-        canvas, #processedImage {
-            display: none; /* 기본적으로 숨김 */
-            width: 640px;
-            height: 480px;
-            border: 2px solid #ccc;
-            border-radius: 10px;
-            object-fit: contain;
-            margin: 10px 0;
+        /* 초기에는 비디오만 표시 */
+        video {
+            display: block;
+        }
+        /* 트래킹 화면은 초기에는 숨김 */
+        #processedImage {
+            display: none;
         }
         .input-group {
             margin: 20px 0;
@@ -83,15 +90,31 @@
         button:active {
             background-color: #004080;
         }
+        /* 카운터 및 메시지 스타일 수정 */
+        #counter {
+            margin-top: 10px;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #333;
+            text-align: center;
+        }
+        #message {
+            margin-top: 20px;
+            color: red;
+            font-size: 1.1em;
+        }
     </style>
 </head>
 <body>
     <h1>{{ workout.capitalize() }} Workout Live Feed</h1>
     <div class="video-container">
+        <!-- 원본 비디오 표시 (좌우 반전 적용) -->
         <video id="video" autoplay></video>
-        <canvas id="canvas"></canvas>
+        <!-- 트래킹 이미지 표시 (좌우 반전 적용) -->
         <img id="processedImage" alt="Processed Frame">
     </div>
+    <!-- REPS 카운터를 비디오 컨테이너 밖에 별도의 섹션에 표시 -->
+    <div id="counter">반복: 0</div>
     <div class="input-group">
         <label for="user_id">User ID:</label>
         <input type="text" id="user_id" name="user_id" required>
@@ -107,13 +130,14 @@
         <button onclick="window.location.href='/'">Go Home</button>
     </div>
 
+    <div id="message"></div>
+
     <script>
-        {% raw %}
         let ws;
         const video = document.getElementById('video');
-        const canvas = document.getElementById('canvas');
-        const context = canvas.getContext('2d');
         const processedImage = document.getElementById('processedImage');
+        const counterDisplay = document.getElementById('counter');
+        const messageDiv = document.getElementById('message');
         let sendInterval;
 
         async function setupCamera() {
@@ -128,24 +152,32 @@
 
         function connectWebSocket(workout) {
             const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-            ws = new WebSocket(`${protocol}://${window.location.host}/ws/${workout}`);
+            ws = new WebSocket(`${protocol}://${window.location.host}/ws/${workout}/${document.getElementById('user_id').value.trim()}`);
+
+            ws.binaryType = 'arraybuffer'; // Binary 데이터 타입 설정
 
             ws.onopen = () => console.log("WebSocket connection established.");
             ws.onmessage = (event) => {
                 const data = JSON.parse(event.data);
+                console.log("Received data:", data); // 수신된 데이터 로깅
+
                 if (data.processed_frame) {
                     processedImage.style.display = 'block'; // 서버 이미지 수신 시 표시
                     processedImage.src = `data:image/jpeg;base64,${data.processed_frame}`;
                 }
                 if (data.counter !== undefined) {
-                    console.log(`Reps Count: ${data.counter}`);
+                    console.log(`Received counter: ${data.counter}`); // 카운터 수신 로깅
+                    counterDisplay.textContent = `반복: ${data.counter}`;
                 }
                 if (data.message) {
                     console.log("Message from server:", data.message);
                 }
             };
             ws.onclose = () => console.log("WebSocket connection closed.");
-            ws.onerror = (error) => console.error("WebSocket error:", error);
+            ws.onerror = (error) => {
+                console.error("WebSocket error:", error);
+                messageDiv.textContent = '서버와의 연결에 문제가 발생했습니다.';
+            };
         }
 
         function startWorkout() {
@@ -154,26 +186,35 @@
             const weight = document.getElementById('weight').value;
 
             if (!userId || !weight) {
-                alert("Please enter User ID and Weight before starting the workout.");
+                alert("운동을 시작하기 전에 User ID와 Weight를 입력해주세요.");
                 return;
             }
 
             connectWebSocket(workout);
 
-            // 비디오 숨기고 캔버스 표시
+            // 운동 시작 시 원본 비디오 숨기고 트래킹 이미지 표시
             video.style.display = 'none';
-            canvas.style.display = 'block';
+            processedImage.style.display = 'block';
+
+            // 프레임 캡처를 위한 캔버스 미리 생성
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
 
             sendInterval = setInterval(() => {
+                // Canvas 없이 직접 비디오 프레임을 캡처
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                const context = canvas.getContext('2d');
                 context.drawImage(video, 0, 0, canvas.width, canvas.height);
-                const dataURL = canvas.toDataURL('image/jpeg');
+                const dataURL = canvas.toDataURL('image/jpeg', 0.7); // 압축률 85%
                 const base64Image = dataURL.split(',')[1];
                 ws.send(JSON.stringify({ 
                     user_id: userId, 
                     weight: weight, 
                     frame: base64Image 
                 }));
-            }, 500);
+            }, 80); // 프레임 전송 간격을 500ms에서 80ms로 줄임, 이것보다 작으면 렉 발생
         }
 
         function saveSet() {
@@ -181,11 +222,11 @@
             const weight = document.getElementById('weight').value;
 
             if (!userId) {
-                alert('Please enter your User ID before saving the set.');
+                alert('운동 세트를 저장하기 전에 User ID를 입력해주세요.');
                 return;
             }
             if (!weight) {
-                alert('Please enter the weight used for the workout.');
+                alert('운동 세트를 저장하기 전에 Weight를 입력해주세요.');
                 return;
             }
 
@@ -195,19 +236,25 @@
                 body: JSON.stringify({ user_id: userId, weight: weight })
             })
             .then(response => response.json())
-            .then(data => alert(data.message));
+            .then(data => alert(data.message))
+            .catch(err => {
+                console.error("Error saving set:", err);
+                alert("세트를 저장하는 중 오류가 발생했습니다.");
+            });
         }
 
         function completeWorkout() {
             const userId = document.getElementById('user_id').value.trim();
 
             if (!userId) {
-                alert('Please enter your User ID before completing the workout.');
+                alert('운동을 완료하기 전에 User ID를 입력해주세요.');
                 return;
             }
 
             clearInterval(sendInterval);
-            ws.close();
+            if (ws) {
+                ws.close();
+            }
 
             fetch('/workout_complete', {
                 method: 'POST',
@@ -217,14 +264,17 @@
             .then(response => response.json())
             .then(data => {
                 alert(data.message);
-                processedImage.style.display = 'none'; // 운동 완료 시 숨김
-                canvas.style.display = 'none';
-                video.style.display = 'block'; // 비디오 다시 표시
+                processedImage.style.display = 'none'; // 운동 완료 시 트래킹 이미지 숨김
+                video.style.display = 'block'; // 운동 완료 시 원본 비디오 다시 표시
+                counterDisplay.textContent = '반복: 0'; // 카운터 초기화
+            })
+            .catch(err => {
+                console.error("Error completing workout:", err);
+                alert("운동을 완료하는 중 오류가 발생했습니다.");
             });
         }
 
         window.onload = setupCamera;
-        {% endraw %}
     </script>
 </body>
 </html>
