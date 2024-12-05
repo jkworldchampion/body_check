@@ -78,7 +78,7 @@
             padding: 10px 20px;
             font-size: 1em;
             color: #fff;
-            background-color: #007BFF;
+            background-color: #000;
             border: none;
             border-radius: 5px;
             cursor: pointer;
@@ -106,7 +106,7 @@
     </style>
 </head>
 <body>
-    <h1>{{ workout.capitalize() }} Workout Live Feed</h1>
+    <h1>{{ workout.capitalize() }} 실시간 트래킹🥋</h1>
     <div class="video-container">
         <!-- 원본 비디오 표시 (좌우 반전 적용) -->
         <video id="video" autoplay></video>
@@ -120,7 +120,7 @@
         <input type="text" id="user_id" name="user_id" required>
     </div>
     <div class="input-group">
-        <label for="weight">Weight (kg):</label>
+        <label for="weight">이번 세트 무게 (kg):</label>
         <input type="number" id="weight" name="weight" min="0" step="0.1" required>
     </div>
     <div class="button-group">
@@ -146,7 +146,7 @@
                 video.srcObject = stream;
             } catch (err) {
                 console.error("Error accessing camera:", err);
-                alert("카메라 접근에 실패했습니다. 브라우저 설정을 확인하세요.");
+                alert("카메라 접근 실패.\n chrome://flags/#unsafely-treat-insecure-origin-as-secure에 현재 링크를 추가해주세요.");
             }
         }
 
