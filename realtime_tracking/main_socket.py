@@ -1,99 +1,383 @@
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
-from firebase_admin import credentials, firestore
-import firebase_admin
+from fastapi.templating import Jinja2Templates
+import cv2
+import mediapipe as mp
+import numpy as np
 from datetime import datetime
-from fastapi.middleware.cors import CORSMiddleware
+import firebase_admin
+from firebase_admin import credentials, firestore
+import base64
+import io
+from PIL import Image
+import json
 
 # FastAPI 앱 생성
 app = FastAPI()
-
-# CORS 설정 (필요에 따라 클라이언트 도메인 추가)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # 모든 도메인 허용, 보안상 필요한 도메인으로 변경 권장
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+templates = Jinja2Templates(directory="templates")  # 템플릿 디렉토리 설정
 
 # Firebase 초기화
-cred = credentials.Certificate("bodycheck-c3808-firebase-adminsdk-toqny-ee882f3512.json")  # Firebase 자격 증명 파일 경로 확인
+cred = credentials.Certificate("bodycheck-e75b2-firebase-adminsdk-vcw37-2d596e2e59.json")  # Firebase 자격 증명 파일 경로 확인
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 
-@app.post("/save_set")
-async def save_set(request: Request):
-    """
-    단일 세트를 저장하는 엔드포인트.
-    JSON 형식으로 user_id, workout_type, reps, weight를 받음.
-    """
-    data = await request.json()
-    user_id = data.get("user_id")
-    workout_type = data.get("workout_type")
-    reps = data.get("reps")
-    weight = data.get("weight")
+# Mediapipe 설정
+mp_pose = mp.solutions.pose
+mp_drawing = mp.solutions.drawing_utils
 
-    if not all([user_id, workout_type, reps, weight]):
-        raise HTTPException(status_code=400, detail="필수 필드가 누락되었습니다.")
+def calculate_angle(a, b, c):
+    """세 점 사이의 각도 계산"""
+    a = np.array(a)
+    b = np.array(b)
+    c = np.array(c)
 
-    # 사용자 정보 가져오기
+    radians = np.arctan2(c[1] - b[1], c[0] - b[0]) - np.arctan2(a[1] - b[1], a[0] - b[0])
+    angle = np.abs(radians * 180.0 / np.pi)
+
+    if angle > 180.0:
+        angle = 360 - angle
+
+    print(f"Calculated angle: {angle}")  # 각도 로그 추가
+
+    return angle
+
+def send_data_to_firebase(user_id, workout_type, sets_data):
+    """Firebase에 모든 세트 데이터를 하나의 문서로 전송"""
+    # 사용자 ID 확인
     user_ref = db.collection("users").where("id", "==", user_id).get()
     if not user_ref:
-        raise HTTPException(status_code=404, detail="Firebase에서 사용자를 찾을 수 없습니다.")
+        raise HTTPException(status_code=404, detail="User not found in Firebase")
 
+    # 사용자의 이름을 가져옵니다
     user_doc = user_ref[0].to_dict()
     user_name = user_doc.get("name", "Unknown")
 
     # 현재 날짜 및 시간
     current_date = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
-    # 저장할 데이터 구성
-    set_data = {
+    # 세트 데이터를 포함한 데이터 구조
+    data = {
         "user_id": user_id,
         "user_name": user_name,
         "workout_type": workout_type,
-        "reps": reps,
-        "weight": weight,
-        "timestamp": current_date
+        "date": current_date,
+        "sets": sets_data
     }
 
-    # Firestore에 데이터 저장
-    db.collection("workout_sets").add(set_data)
-    print(f"세트 저장 완료: {set_data}")
+    # Firestore 컬렉션에 데이터 추가
+    db.collection("workout_sessions").add(data)
+    print(f"Firebase에 데이터 전송 완료 ({workout_type}, 총 세트 {len(sets_data)}):", data)
 
-    return {"status": "success", "message": "세트가 성공적으로 저장되었습니다!"}
+# 사용자별 상태 저장을 위한 딕셔너리
+user_states = {}
 
-@app.post("/complete_workout")
-async def complete_workout(request: Request):
-    """
-    운동 완료를 처리하는 엔드포인트.
-    필요에 따라 추가 로직을 구현할 수 있음.
-    """
-    data = await request.json()
-    user_id = data.get("user_id")
-    workout_type = data.get("workout_type")
+@app.websocket("/ws/{workout}/{user_id}")
+async def websocket_endpoint(websocket: WebSocket, workout: str, user_id: str):
+    """WebSocket을 통한 비디오 스트리밍 및 운동 감지 처리"""
+    global user_states
 
-    if not all([user_id, workout_type]):
-        raise HTTPException(status_code=400, detail="필수 필드가 누락되었습니다.")
+    # 사용자 상태 초기화
+    user_states[user_id] = {
+        "workout_type": workout,
+        "counter": 0,
+        "stage": None,
+        "sets_data": []
+    }
 
-    # 추가적인 완료 로직을 여기에 구현할 수 있습니다.
+    await websocket.accept()
 
-    return {"status": "success", "message": "운동이 성공적으로 완료되었습니다!"}
+    with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5, model_complex=2) as pose:
+        try:
+            while True:
+                data = await websocket.receive_text()
+                data_json = json.loads(data)
+                frame_data = data_json.get("frame")
+
+                if not frame_data:
+                    await websocket.send_text(json.dumps({"message": "No frame data received."}))
+                    continue
+
+                # 디코딩된 이미지 처리
+                try:
+                    img_bytes = base64.b64decode(frame_data)
+                    img = Image.open(io.BytesIO(img_bytes))
+                    frame = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+                except Exception as e:
+                    print(f"Error decoding image: {e}")
+                    await websocket.send_text(json.dumps({"message": "Error decoding image."}))
+                    continue
+
+                # Mediapipe 처리
+                image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                image.flags.writeable = False
+                results = pose.process(image)
+                image.flags.writeable = True
+                image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+
+                if results.pose_landmarks is not None:
+                    try:
+                        landmarks = results.pose_landmarks.landmark
+                        state = user_states[user_id]
+                        workout_type = state["workout_type"]
+
+                        # 운동에 따른 주요 포인트 좌표 추출 및 각도 계산 로직
+                        if workout_type == "benchpress":
+                            left_elbow = [landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].x,
+                                          landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].y]
+                            left_shoulder = [landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].x,
+                                             landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].y]
+                            left_wrist = [landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].x,
+                                          landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].y]
+                            angle = calculate_angle(left_shoulder, left_elbow, left_wrist)
+
+                            # 벤치프레스 카운터 로직
+                            if angle > 160:
+                                state["stage"] = "down"
+                                print(f"벤치프레스 - 스테이지: down, 각도: {angle}")
+                            if angle < 50 and state["stage"] == 'down':
+                                state["stage"] = "up"
+                                state["counter"] += 1
+                                print(f"벤치프레스 - 반복 증가: {state['counter']}")
+
+                        # 다른 운동 유형별 로직도 유사하게 추가
+                        elif workout_type == "squat":
+                            left_knee = [landmarks[mp_pose.PoseLandmark.LEFT_KNEE.value].x,
+                                         landmarks[mp_pose.PoseLandmark.LEFT_KNEE.value].y]
+                            left_hip = [landmarks[mp_pose.PoseLandmark.LEFT_HIP.value].x,
+                                        landmarks[mp_pose.PoseLandmark.LEFT_HIP.value].y]
+                            left_ankle = [landmarks[mp_pose.PoseLandmark.LEFT_ANKLE.value].x,
+                                          landmarks[mp_pose.PoseLandmark.LEFT_ANKLE.value].y]
+                            angle = calculate_angle(left_hip, left_knee, left_ankle)
+
+                            # 스쿼트 카운터 로직
+                            if angle > 160:
+                                stage = "up"
+                                print(f"스쿼트 - 스테이지: up, 각도: {angle}")
+                            if angle < 90 and stage == 'up':
+                                stage = "down"
+                                counter += 1
+                                print(f"스쿼트 - 반복 증가: {counter}")
+
+                        elif workout_type == "deadlift":
+                            left_hip = [landmarks[mp_pose.PoseLandmark.LEFT_HIP.value].x,
+                                        landmarks[mp_pose.PoseLandmark.LEFT_HIP.value].y]
+                            left_knee = [landmarks[mp_pose.PoseLandmark.LEFT_KNEE.value].x,
+                                        landmarks[mp_pose.PoseLandmark.LEFT_KNEE.value].y]
+                            left_shoulder = [landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].x,
+                                             landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].y]
+                            angle = calculate_angle(left_shoulder, left_hip, left_knee)
+
+                            # 데드리프트 카운터 로직
+                            if angle > 160:
+                                stage = "up"
+                                print(f"데드리프트 - 스테이지: up, 각도: {angle}")
+                            if angle < 90 and stage == 'up':
+                                stage = "down"
+                                counter += 1
+                                print(f"데드리프트 - 반복 증가: {counter}")
+
+                    except Exception as e:
+                        print(f"Error during processing landmarks: {e}")
+
+                # Mediapipe 포즈 랜드마크 렌더링
+                if results.pose_landmarks is not None:
+                    mp_drawing.draw_landmarks(image, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
+
+                # 프레임을 JPEG로 인코딩하여 클라이언트로 전송
+                try:
+                    _, encoded_image = cv2.imencode(".jpg", image)
+                    b64_encoded_image = base64.b64encode(encoded_image).decode('utf-8')
+                    state = user_states[user_id]
+                    await websocket.send_text(json.dumps({"processed_frame": b64_encoded_image, "counter": state["counter"]}))
+                except Exception as e:
+                    print(f"Error encoding image: {e}")
+                    await websocket.send_text(json.dumps({"message": "Error encoding image."}))
+
+        except WebSocketDisconnect:
+            print(f"WebSocket connection closed for user_id: {user_id}")
+            del user_states[user_id]
+        except Exception as e:
+            print(f"WebSocket error: {e}")
+            del user_states[user_id]
+
+@app.post("/set_save")
+async def set_save(request: Request):
+    """현재 세트 저장"""
+    try:
+        req_data = await request.json()
+        user_id = req_data.get("user_id")
+        weight_input = req_data.get("weight")
+
+        print(f"Received set_save request: user_id={user_id}, weight={weight_input}")
+
+        if not user_id:
+            raise HTTPException(status_code=400, detail="User ID is required")
+        if not weight_input:
+            raise HTTPException(status_code=400, detail="Weight is required")
+
+        state = user_states.get(user_id)
+        if not state:
+            raise HTTPException(status_code=400, detail="User state not found. WebSocket connection might not be established.")
+
+        if state["counter"] == 0:
+            raise HTTPException(status_code=400, detail="No reps counted to save.")
+
+        # 현재 세트 데이터 저장
+        set_data = {
+            "reps": state["counter"],
+            "weight": weight_input
+        }
+        state["sets_data"].append(set_data)
+        print(f"세트 {len(state['sets_data'])} 저장 완료: {set_data}")
+
+        # 세트 카운터 초기화
+        state["counter"] = 0
+        state["stage"] = None
+
+        return {"status": "success", "message": f"Set {len(state['sets_data'])} saved successfully!"}
+    except HTTPException as he:
+        print(f"HTTPException in set_save: {he.detail}")
+        raise he
+    except Exception as e:
+        print(f"Error in set_save: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+@app.post("/workout_complete")
+async def workout_complete(request: Request):
+    """운동 완료 후 모든 세트 데이터를 Firebase에 전송."""
+    try:
+        req_data = await request.json()
+        user_id = req_data.get("user_id")
+
+        print(f"Received workout_complete request: user_id={user_id}")
+
+        if not user_id:
+            raise HTTPException(status_code=400, detail="User ID is required")
+
+        state = user_states.get(user_id)
+        if not state:
+            raise HTTPException(status_code=400, detail="User state not found. WebSocket connection might not be established.")
+
+        if not state["sets_data"]:
+            raise HTTPException(status_code=400, detail="No sets to complete.")
+
+        send_data_to_firebase(user_id, state["workout_type"], state["sets_data"])
+
+        # 세트 데이터 초기화
+        state["sets_data"].clear()
+        print("모든 세트 데이터가 Firebase에 전송되고 초기화되었습니다.")
+
+        return {"status": "success", "message": "All workout data sent to Firebase successfully!"}
+    except HTTPException as he:
+        print(f"HTTPException in workout_complete: {he.detail}")
+        raise he
+    except Exception as e:
+        print(f"Error in workout_complete: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+@app.get("/video_feed/{workout}", response_class=HTMLResponse)
+def video_feed(workout: str, request: Request):
+    """운동 종류에 따른 실시간 비디오 스트리밍 및 세트 관리 페이지."""
+    return templates.TemplateResponse("video_feed.html", {"request": request, "workout": workout})
 
 @app.get("/", response_class=HTMLResponse)
-def workout_selection():
+def workout_selection(request: Request):
     """운동 선택 페이지 제공."""
-    html_content = """
-    <!DOCTYPE html>
-    <html lang="ko">
-    <head>
-        <meta charset="UTF-8">
-        <title>Workout Tracker API</title>
-    </head>
-    <body>
-        <h1>Workout Tracker API가 실행 중입니다.</h1>
-    </body>
-    </html>
-    """
-    return HTMLResponse(content=html_content)
+    return templates.TemplateResponse("workout_selection.html", {"request": request})
+
+# 사용자별 상태 저장을 위한 딕셔너리
+user_states = {}
+
+@app.websocket("/ws/{workout}/{user_id}")
+async def websocket_endpoint(websocket: WebSocket, workout: str, user_id: str):
+    """WebSocket을 통한 비디오 스트리밍 및 운동 감지 처리"""
+    global user_states
+
+    # 사용자 상태 초기화
+    user_states[user_id] = {
+        "workout_type": workout,
+        "counter": 0,
+        "stage": None,
+        "sets_data": []
+    }
+
+    await websocket.accept()
+
+    with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
+        try:
+            while True:
+                data = await websocket.receive_text()
+                data_json = json.loads(data)
+                frame_data = data_json.get("frame")
+
+                if not frame_data:
+                    await websocket.send_text(json.dumps({"message": "No frame data received."}))
+                    continue
+
+                # 디코딩된 이미지 처리
+                try:
+                    img_bytes = base64.b64decode(frame_data)
+                    img = Image.open(io.BytesIO(img_bytes))
+                    frame = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+                except Exception as e:
+                    print(f"Error decoding image: {e}")
+                    await websocket.send_text(json.dumps({"message": "Error decoding image."}))
+                    continue
+
+                # Mediapipe 처리
+                image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                image.flags.writeable = False
+                results = pose.process(image)
+                image.flags.writeable = True
+                image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+
+                if results.pose_landmarks is not None:
+                    try:
+                        landmarks = results.pose_landmarks.landmark
+                        state = user_states[user_id]
+                        workout_type = state["workout_type"]
+
+                        # 운동에 따른 주요 포인트 좌표 추출 및 각도 계산 로직
+                        if workout_type == "benchpress":
+                            left_elbow = [landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].x,
+                                          landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].y]
+                            left_shoulder = [landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].x,
+                                             landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].y]
+                            left_wrist = [landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].x,
+                                          landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].y]
+                            angle = calculate_angle(left_shoulder, left_elbow, left_wrist)
+
+                            # 벤치프레스 카운터 로직
+                            if angle > 160:
+                                state["stage"] = "down"
+                                print(f"벤치프레스 - 스테이지: down, 각도: {angle}")
+                            if angle < 50 and state["stage"] == 'down':
+                                state["stage"] = "up"
+                                state["counter"] += 1
+                                print(f"벤치프레스 - 반복 증가: {state['counter']}")
+
+                        # 다른 운동 유형별 로직도 유사하게 추가
+
+                    except Exception as e:
+                        print(f"Error during processing landmarks: {e}")
+
+                # Mediapipe 포즈 랜드마크 렌더링
+                if results.pose_landmarks is not None:
+                    mp_drawing.draw_landmarks(image, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
+
+                # 프레임을 JPEG로 인코딩하여 클라이언트로 전송
+                try:
+                    _, encoded_image = cv2.imencode(".jpg", image)
+                    b64_encoded_image = base64.b64encode(encoded_image).decode('utf-8')
+                    state = user_states[user_id]
+                    await websocket.send_text(json.dumps({"processed_frame": b64_encoded_image, "counter": state["counter"]}))
+                except Exception as e:
+                    print(f"Error encoding image: {e}")
+                    await websocket.send_text(json.dumps({"message": "Error encoding image."}))
+
+        except WebSocketDisconnect:
+            print(f"WebSocket connection closed for user_id: {user_id}")
+            del user_states[user_id]
+        except Exception as e:
+            print(f"WebSocket error: {e}")
+            del user_states[user_id]
