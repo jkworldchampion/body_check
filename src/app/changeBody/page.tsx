@@ -1,16 +1,14 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import { firestore } from '@/app/firestore/firebase';
-import {collection, query, where, getDocs, addDoc, doc, getDoc, orderBy} from 'firebase/firestore';
-import useAuthStore from '@/store/useAuthStore';
-import DashboardLayout from '@/app/componenets/dashboardLayout';
-import styles from './changeBody.module.css';
-import headerStyles from '@/app/utils/headerStyles';
-import { Bar } from 'react-chartjs-2';
-import { FatCalculator } from '../componenets/FatCalculator';
-import { AgeCalculator } from '../componenets/AgeCalculator';
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
+import React, { useEffect, useState } from "react";
+import { firestore } from "@/app/firestore/firebase";
+import { collection, query, where, getDocs, addDoc, doc, getDoc, orderBy } from "firebase/firestore";
+import useAuthStore from "@/store/useAuthStore";
+import DashboardLayout from "@/app/componenets/dashboardLayout";
+import { Bar } from "react-chartjs-2";
+import { FatCalculator } from "../componenets/FatCalculator";
+import { AgeCalculator } from "../componenets/AgeCalculator";
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from "chart.js";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -24,10 +22,9 @@ interface UserData {
 const Changebody = () => {
     const userId = useAuthStore((state) => state.userId);
     const [userImages, setUserImages] = useState<string[]>([]);
-    const [visibleImages, setVisibleImages] = useState<number>(3);
+    const [visibleImages, setVisibleImages] = useState<number>(6);
     const [userData, setUserData] = useState<UserData | null>(null);
     const [calculatedData, setCalculatedData] = useState<any>(null);
-    const [weight, setWeight] = useState(0);
     const [isScriptLoaded, setIsScriptLoaded] = useState(false);
 
     // Firestore에서 사용자 데이터 가져오기
@@ -35,54 +32,51 @@ const Changebody = () => {
         if (!userId) return;
 
         try {
-            const userDocRef = doc(firestore, 'users', userId);
+            const userDocRef = doc(firestore, "users", userId);
             const userDoc = await getDoc(userDocRef);
 
             if (userDoc.exists()) {
                 const data = userDoc.data() as UserData;
                 setUserData(data);
 
-                // BMI 및 기타 데이터 계산
                 const fatData = FatCalculator(data.weight, data.height, data.gender, data.age);
                 const ageGroup = AgeCalculator(data.age);
 
-                setCalculatedData({...fatData, ageGroup});
+                setCalculatedData({ ...fatData, ageGroup });
             } else {
-                console.error('사용자 데이터를 찾을 수 없습니다.');
+                console.error("사용자 데이터를 찾을 수 없습니다.");
             }
         } catch (error) {
-            console.error('데이터 가져오는 중 오류 발생:', error);
+            console.error("데이터 가져오는 중 오류 발생:", error);
         }
     };
 
-    // Firestore에서 사용자 이미지 가져오기
     const fetchUserImages = async () => {
         if (!userId) return;
 
         try {
-            const imagesRef = collection(firestore, 'images');
-                const q = query(imagesRef, where('userId', '==', userId), orderBy('timestamp', 'asc')); // 저장된 순서대로 정렬
+            const imagesRef = collection(firestore, "images");
+            const q = query(imagesRef, where("userId", "==", userId), orderBy("timestamp", "asc"));
             const querySnapshot = await getDocs(q);
 
-            const images = querySnapshot.docs.map((doc) => doc.data().imageUrl || '');
+            const images = querySnapshot.docs.map((doc) => doc.data().imageUrl || "");
             setUserImages(images);
         } catch (error) {
-            console.error('사용자 이미지 가져오는 중 오류 발생:', error);
+            console.error("사용자 이미지 가져오는 중 오류 발생:", error);
         }
     };
 
-    // Cloudinary 스크립트 로드
     const loadCloudinaryScript = () => {
         if (window.cloudinary) {
             setIsScriptLoaded(true);
             return;
         }
 
-        const script = document.createElement('script');
-        script.src = 'https://upload-widget.cloudinary.com/global/all.js';
+        const script = document.createElement("script");
+        script.src = "https://upload-widget.cloudinary.com/global/all.js";
         script.async = true;
         script.onload = () => setIsScriptLoaded(true);
-        script.onerror = () => console.error('Cloudinary script 로드 실패');
+        script.onerror = () => console.error("Cloudinary script 로드 실패");
         document.body.appendChild(script);
 
         return () => {
@@ -96,10 +90,9 @@ const Changebody = () => {
         loadCloudinaryScript();
     }, [userId]);
 
-    // 이미지 업로드
     const handleUpload = () => {
         if (!isScriptLoaded) {
-            console.error('Cloudinary script가 아직 로드되지 않았습니다.');
+            console.error("Cloudinary script가 아직 로드되지 않았습니다.");
             return;
         }
 
@@ -107,19 +100,19 @@ const Changebody = () => {
             {
                 cloudName: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME!,
                 uploadPreset: process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!,
-                sources: ['local', 'url', 'camera'],
+                sources: ["local", "url", "camera"],
             },
             async (error: any, result: any) => {
                 if (error) {
-                    console.error('이미지 업로드 중 오류 발생:', error);
+                    console.error("이미지 업로드 중 오류 발생:", error);
                     return;
                 }
 
-                if (result.event === 'success') {
+                if (result.event === "success") {
                     const uploadedUrl = result.info.secure_url;
 
                     try {
-                        const imagesRef = collection(firestore, 'images');
+                        const imagesRef = collection(firestore, "images");
                         await addDoc(imagesRef, {
                             userId: userId,
                             imageUrl: uploadedUrl,
@@ -128,7 +121,7 @@ const Changebody = () => {
 
                         setUserImages((prevImages) => [...prevImages, uploadedUrl]);
                     } catch (firestoreError) {
-                        console.error('Firestore에 이미지 저장 중 오류 발생:', firestoreError);
+                        console.error("Firestore에 이미지 저장 중 오류 발생:", firestoreError);
                     }
                 }
             }
@@ -137,7 +130,6 @@ const Changebody = () => {
         widget.open();
     };
 
-    // 그래프 데이터 생성 함수
     const generateChartData = (label: string, value: number, color: string) => ({
         labels: [label],
         datasets: [
@@ -152,143 +144,91 @@ const Changebody = () => {
 
     const chartOptions = {
         responsive: true,
-        indexAxis: 'y',
+        indexAxis: "y",
         maintainAspectRatio: false,
-
-        x: {
-            ticks: {
-                stepSize: 5, // 눈금 간격 설정
-                callback: (value: any) => `${value}`, // 눈금 레이블 커스터마이징
-            },
-            min: 0, // 최소값 설정
-            max: 50, // 최대값 설정
-        },
     };
 
-    // @ts-ignore
-    // @ts-ignore
     return (
         <DashboardLayout>
-            <div>
-
-                <h1 style={headerStyles.introTitle}>오늘도 열심히 운동하셨군요! 💪</h1>
-
+            <div className="max-w-6xl mx-auto p-4">
+                <h1 className="text-2xl font-bold mb-4">오늘도 열심히 운동하셨군요! 💪</h1>
 
                 {calculatedData && (
                     <>
-                        <div className={styles.chartSection}>
-                            <h2 className={styles.h2Font}>BMI</h2>
-                            <div style={{height: '200px', width: '100%'}}>
+                        <div className="mb-8">
+                            <h2 className="text-xl font-semibold mb-2">BMI</h2>
+                            <div className="h-48">
                                 <Bar
-                                    data={generateChartData('BMI', calculatedData.bmi, '#CEDFF6')}
+                                    data={generateChartData("BMI", calculatedData.bmi, "#CEDFF6")}
                                     options={chartOptions}
                                 />
                             </div>
                         </div>
 
-                        <div className={styles.chartSection}>
-                            <h2 className={styles.h2Font}>체지방률 (%)</h2>
-                            <div style={{height: '200px', width: '100%'}}>
+                        <div className="mb-8">
+                            <h2 className="text-xl font-semibold mb-2">체지방률 (%)</h2>
+                            <div className="h-48">
                                 <Bar
-                                    data={generateChartData('체지방률', calculatedData.fatPercentage, '#CEDFF6')}
+                                    data={generateChartData("체지방률", calculatedData.fatPercentage, "#CEDFF6")}
                                     options={chartOptions}
                                 />
                             </div>
                         </div>
 
-                        <div className={styles.chartSection}>
-                            <h2 className={styles.h2Font}>체중 (kg)</h2>
-                            <div style={{height: '200px', width: '100%'}}>
+                        <div className="mb-8">
+                            <h2 className="text-xl font-semibold mb-2">체중 (kg)</h2>
+                            <div className="h-48">
                                 <Bar
-                                    data={generateChartData('체중', userData!.weight, '#CEDFF6')} // Firestore의 weight 사용
-                                    options={{
-                                        responsive: true,
-                                        maintainAspectRatio: false, // 고정 높이를 유지하기 위해 비율 유지 비활성화
-                                        indexAxis: 'y',
-                                        plugins: {
-                                            legend: {
-                                                position: 'top',
-                                            },
-                                        },
-                                        x: {
-                                            ticks: {
-                                                stepSize: 10, // 눈금 간격 설정
-                                                align: 'start'
-                                            },
-                                            min: 0, // 최소값 설정
-                                            max: 100, // 최대값 설정
-                                        },
-                                    }}
+                                    data={generateChartData("체중", userData!.weight, "#CEDFF6")}
+                                    options={chartOptions}
                                 />
                             </div>
                         </div>
                     </>
                 )}
-            </div>
 
-            <div className={styles.pageContainer}>
-                <h2 className={styles.h2Font}>운동 사진</h2>
+                <h2 className="text-xl font-semibold mb-4">운동 사진</h2>
 
-                <div>
-                    {Array.from({length: Math.ceil(visibleImages / 6)}).map((_, rowIndex) => (
-                        <div key={rowIndex} className={styles.boxContainer}>
-                            {userImages
-                                .slice(rowIndex * 6, rowIndex * 3 + 3)
-                                .map((image, index) => (
-                                    <div key={index} className={styles.imageBox}>
-                                        <img src={image} alt={`운동 사진 ${index}`} className={styles.image}/>
-                                    </div>
-                                ))}
-
-
-                            {/* 빈 박스 로직 */}
-                            {userImages.slice(rowIndex * 6, rowIndex * 6 + 6).length < 6 &&
-                                Array(3 - userImages.slice(rowIndex * 6, rowIndex * 6 + 6).length)
-                                    .fill(0)
-                                    .map((_, emptyIndex) => (
-                                        <div key={`empty-${rowIndex}-${emptyIndex}`} >
-
-                                        </div>
-                                    ))}
+                <div className="grid grid-cols-3 gap-4">
+                    {userImages.slice(0, visibleImages).map((image, index) => (
+                        <div key={index} className="w-full h-64 bg-gray-200 rounded-md overflow-hidden">
+                            <img src={image} alt={`운동 사진 ${index}`} className="w-full h-full object-cover" />
                         </div>
                     ))}
                 </div>
 
-                {/* 버튼 영역 */}
-                <div className={styles.ButtonBox}>
+                <div className="flex justify-center mt-4">
                     {userImages.length > visibleImages ? (
                         <button
-                            onClick={() => setVisibleImages((prev) => prev + 6)} // "사진 더보기" 버튼
-                            className={styles.moreButton}
+                            onClick={() => setVisibleImages((prev) => prev + 6)}
+                            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
                         >
                             사진 더보기...
                         </button>
-                    ) : visibleImages > 6 ? ( // 모든 사진이 표시된 경우 "접어두기" 버튼 활성화
+                    ) : visibleImages > 6 ? (
                         <button
-                            onClick={() => setVisibleImages(3)} // 초기 상태로 리셋
-                            className={styles.collapseButton}
+                            onClick={() => setVisibleImages(6)}
+                            className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition"
                         >
                             접어두기
                         </button>
                     ) : null}
                 </div>
 
-                {/* 업로드 버튼 */}
-                <div className={styles.ButtonBox}>
+                <div className="flex justify-center mt-6">
                     <button
                         onClick={handleUpload}
                         disabled={!isScriptLoaded}
-                        className={styles.uploadButton}
+                        className={`px-6 py-3 border-2 border-black text-black rounded-full transition ${
+                            isScriptLoaded ? "hover:bg-gray-100" : "cursor-not-allowed bg-gray-300"
+                        }`}
                     >
                         이미지 업로드
                     </button>
                 </div>
             </div>
-
-
         </DashboardLayout>
     );
 };
-
 
 export default Changebody;

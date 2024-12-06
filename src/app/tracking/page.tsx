@@ -1,82 +1,37 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import DashboardLayout from "@/app/componenets/dashboardLayout";
 
 export default function RecordingExercise() {
-    const [serverResponse, setServerResponse] = useState<string | null>(null); // 서버 응답 상태
-
-    const handleButtonClick = async () => {
-        try {
-            const response = await fetch("http://202.30.29.168:9888"); // 이동할 URL 요청
-            const data = await response.text();
-            setServerResponse(data); // 서버 응답 저장
-        } catch (error) {
-            console.error("서버 요청 실패:", error);
-            setServerResponse("서버 연결에 실패했습니다.");
-        }
+    const handleRedirect = () => {
+        window.location.href = "http://202.30.29.168:9888"; //
     };
 
     return (
         <DashboardLayout>
             {/* 콘텐츠 */}
-            <div style={{ display: "flex", marginTop: "100px", alignItems: "center", gap: "10px" }}>
+            <div className="flex mt-[100px] items-center gap-10">
                 {/* 설명 영역 (왼쪽) */}
-                <div style={{ flex: 1, padding: "50px" }}>
-                    <h1 style={{ fontSize: "40px", fontWeight: "bold", marginBottom: "20px" }}>
-                        BODY : CHECK
-                    </h1>
-                    <p style={{ fontSize: "20px", lineHeight: "1.5", marginBottom: "100px", color: "#333" }}>
+                <div className="flex-1 p-12">
+                    <h1 className="text-[60px] font-bold mb-5">BODY : CHECK</h1>
+                    <p className="text-[30px] leading-relaxed mb-[100px] text-gray-800">
                         이제 운동할 준비가 되셨나요?<br />
                         <strong>BODY : CHECK</strong>는 실시간으로 운동을 체크해드려요.
                     </p>
                     {/* 서버 연결 버튼 */}
                     <button
-                        onClick={handleButtonClick}
-                        style={{
-                            padding: "15px 30px",
-                            backgroundColor: "black",
-                            color: "white",
-                            border: "none",
-                            borderRadius: "5px",
-                            cursor: "pointer",
-                            fontSize: "16px",
-                        }}
+                        onClick={handleRedirect}
+                        className="px-10 py-5 bg-black text-white rounded-full text-[16px] hover:bg-gray-800 transition"
                     >
                         서버 연결
                     </button>
-
-                    {/* 서버 응답 */}
-                    {serverResponse && (
-                        <div
-                            style={{
-                                marginTop: "50px",
-                                padding: "10px",
-                                backgroundColor: "#f9f9f9",
-                                border: "1px solid #ddd",
-                                borderRadius: "5px",
-                                color: "#333",
-                                textAlign: "left",
-                                whiteSpace: "pre-wrap",
-                            }}
-                        >
-                            <h2>서버 응답:</h2>
-                            <pre>{serverResponse}</pre>
-                        </div>
-                    )}
                 </div>
 
                 {/* 버튼과 텍스트 영역 (오른쪽) */}
-                <div style={{ flex: 1, textAlign: "center" }}>
+                <div className="flex-1 text-center mt-10 ">
                     {/* 가이드 영역 */}
-                    <div
-                        style={{
-                            display: "grid",
-                            gridTemplateColumns: "1fr 1fr",
-                            gap: "30px",
-                            marginBottom: "40px",
-                        }}
-                    >
+                    <div className="grid grid-cols-2 gap-8 mt-10 mb-10">
                         {/* 각 단계 */}
                         {[
                             { step: "1", text: "운동종목 선택하기" },
@@ -86,27 +41,12 @@ export default function RecordingExercise() {
                         ].map((item) => (
                             <div
                                 key={item.step}
-                                style={{
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    border: "2px solid black",
-                                    borderRadius: "50%",
-                                    width: "300px",
-                                    height: "300px",
-                                    margin: "0 auto",
-                                    fontWeight: "lighter",
-                                    fontSize: "30px",
-                                    textAlign: "center",
-                                    backgroundColor: ["2", "3"].includes(item.step) ? "#030303" : "",
-                                    color: ["2", "3"].includes(item.step) ? "#fff" : "black",
-                                }}
+                                className={`flex flex-col items-center justify-center border-2 border-black rounded-full w-[300px] h-[300px] mx-auto text-center ${
+                                    ["2", "3"].includes(item.step) ? "bg-black text-white" : "bg-transparent text-black"
+                                }`}
                             >
-                                <span style={{ fontSize: "50px", marginBottom: "5px" }}>
-                                    {item.step}
-                                </span>
-                                <span style={{ fontSize: "25px" }}>{item.text}</span>
+                                <span className="text-[50px] mb-2">{item.step}</span>
+                                <span className="text-[25px]">{item.text}</span>
                             </div>
                         ))}
                     </div>

@@ -3,8 +3,6 @@
 import React, { useState, useEffect, ChangeEvent } from "react";
 import { useUserStore } from "@/store/userStore";
 import useAuthStore from "@/store/useAuthStore";
-import { FaEdit } from "react-icons/fa";
-import styles from "./MyPage.module.css";
 import DashboardLayout from '@/app/componenets/dashboardLayout';
 
 
@@ -13,6 +11,7 @@ interface UserData {
     age?: number; // 누락되었을 수도 있기 때문에 선택적 필드로 처리해줌..
     height?: number;
     weight?: number;
+    password?: string;
     address?: string;
     [key: string]: string | number | undefined;
     // 객체에 어떤 키가 정확히 있을지 모르기 때문에
@@ -23,8 +22,16 @@ interface UserData {
 const MyPage: React.FC = () => {
     const { userId } = useAuthStore();
     const { userData, isLoading, fetchUser, updateUser } = useUserStore();
-    const [editableField, setEditableField] = useState<string | null>(null);
-    const [editedValue, setEditedValue] = useState<string | number>("");
+    const [formData, setFormData] = useState<UserData>({
+        id: "",
+        age: undefined,
+        height: undefined,
+        weight: undefined,
+        address: "",
+        password: "",
+        confirmPassword: "",
+        phoneNumber: "",
+    });
 
     useEffect(() => {
         if (userId) {
@@ -32,114 +39,102 @@ const MyPage: React.FC = () => {
         }
     }, [userId, fetchUser]);
 
-    const enableEdit = (field: keyof UserData, currentValue: string | number) => {
-        // @ts-ignore
-        setEditableField(field);
-        setEditedValue(currentValue);
+    useEffect(() => {
+        if (userData) {
+            setFormData({
+                id: userData.id || "",
+                age: userData.age || undefined,
+                height: userData.height || undefined,
+                weight: userData.weight || undefined,
+                address: userData.address || "",
+                password: "",
+                confirmPassword: "",
+                phoneNumber: userData.phoneNumber || "",
+            });
+        }
+    }, [userData]);
+
+    const handleChange = (
+        field: keyof UserData,
+        value: string | number
+    ) => {
+        setFormData((prev) => ({ ...prev, [field]: value }));
     };
 
     const handleSave = async () => {
-        if (!editableField) return;
         try {
             if (typeof userId === "string") {
-                await updateUser(userId, {[editableField]: editedValue});
+                await updateUser(userId, formData);
+                alert("성공적으로 업데이트되었습니다.");
             }
-            alert(`성공적으로 업데이트되었습니다.`);
         } catch (error) {
             console.error("수정 오류:", error);
             alert("수정 중 오류가 발생했습니다.");
-        } finally {
-            setEditableField(null);
         }
     };
+
 
     const renderField = (
         label: string,
         field: keyof UserData,
-        type: "text" | "number"
-    ) => {
-        const value = userData?.[field];
-        //?. = 옵셔널 체이닝 : userData 가 null 또는 undefined 인 경우에 실행을 중단하고 undefined 를 반환함
-        // userData 가 null이나 undfined 라면 실행을 중단하고 value 에 undefined 할당
-        // > 런타임 오류방지
-
-
-        return (
-            <div className={styles.fieldGroup}>
-                <label className={styles.label}>{label}:</label>
-                <div className={styles.valueContainer}>
-                    {editableField === field ? (
-                        <>
-                            <input
-                                type={type}
-                                value={editedValue}
-                                onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                                    setEditedValue(
-                                        type === "number"
-                                            ? parseInt(e.target.value, 10)
-                                            : e.target.value
-                                    )
-                                }
-                                className={styles.input}
-                            />
-                            <button
-                                onClick={handleSave}
-                                className={styles.saveButton}
-                            >
-                                저장
-                            </button>
-                        </>
-                    ) : value !== undefined && value !== null ? (
-                        <>
-                            <span className={styles.value}>{value}</span>
-                            <FaEdit
-                                onClick={() => enableEdit(field, value)}
-                                className={styles.editIcon}
-                                size={18}
-                            />
-                        </>
-                    ) : (
-                        <>
-                            <span className={styles.value}>데이터가 없습니다</span>
-                            <FaEdit
-                                onClick={() => enableEdit(field, "")}
-                                className={styles.editIcon}
-                                size={18}
-                            />
-                        </>
-                    )}
-                </div>
+        type: "text" | "number" | "password",
+        description?: string
+    ) => (
+        <div className="flex items-center py-3 border-b border-gray-300">
+            <div className="w-1/3 text-gray-700 font-medium">{label}</div>
+            <div className="w-2/3">
+                <input
+                    type={type}
+                    value={formData[field] || ""}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                        handleChange(
+                            field,
+                            type === "number"
+                                ? parseInt(e.target.value, 10)
+                                : e.target.value
+                        )
+                    }
+                    className="w-full px-3 py-2 border border-gray-400 rounded-md focus:ring-2 focus:ring-blue-500"
+                />
+                {description && <p className="text-sm text-red-500 mt-1">{description}</p>}
             </div>
-        );
-    };
+        </div>
+    );
 
     if (isLoading) return <p className="text-center text-gray-500">로딩 중...</p>;
 
     return (
         <DashboardLayout>
-            <div className={styles.container}>
-                <h1 className={styles.title}>회원 정보 수정</h1>
-                <p className={styles.description}>
-                    회원정보를 수정한 뒤,
-                    수정완료 버튼을 눌러야 저장됩니다 !
+            <div className="mt-10 max-w-4xl mx-auto p-8 bg-white shadow-lg rounded-lg">
+                <h1 className="text-3xl font-bold text-blue-600 mb-4">나의 정보</h1>
+                <p className="text-2xl text-gray-500 mb-6">
+                    고객님 정보를 확인하고 수정하세요. <br />
+                    정확한 정보 입력이 안전한 서비스 이용을 도와줍니다.
                 </p>
-                <hr className={styles.line}/>
 
-                <div className={styles.fieldGroup}>
-                    <label className={styles.label}>아이디:</label>
-                    <div className={styles.valueContainer}>
-                        <span className={styles.value}>
-                            {userData?.id || "데이터가 없습니다"}
-                        </span>
-                    </div>
-                </div>
+                <div className="text-2xl border-t border-gray-300 mt-7 mb-6"></div>
+
+                {renderField("아이디", "id", "text")}
                 {renderField("나이", "age", "number")}
                 {renderField("키", "height", "number")}
                 {renderField("몸무게", "weight", "number")}
                 {renderField("주소", "address", "text")}
+                {renderField(
+                    "비밀번호",
+                    "password",
+                    "password",
+                    "소문자와 숫자를 포함한 8자리 이상이여야 합니다.."
+                )}
+                {renderField(
+                    "비밀번호 확인",
+                    "confirmPassword",
+                    "password",
+                    "비밀번호를 한 번 더 입력해주세요."
+                )}
+
                 <button
-                    className={styles.completeButton}
-                    onClick={() => alert("수정 완료!")}
+                    onClick={handleSave}
+                    className="text-2xl w-full bg-blue-500 text-white py-3 px-6 mt-8 rounded-lg font-medium hover:bg-blue-600 transition"
                 >
                     수정 완료
                 </button>
