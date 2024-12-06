@@ -19,6 +19,14 @@ const nextConfig = {
             },
         ];
     },
+    async rewrites() {
+        return [
+            {
+                source: '/predict', // Next.js에서 사용하는 엔드포인트
+                destination: 'http://202.30.29.168:5000/predict' // Flask 서버의 엔드포인트
+            },
+        ];
+    },
 };
 
 export default nextConfig;

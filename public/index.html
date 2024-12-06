@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Upload and Prediction</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+        }
+        input[type="file"], input[type="number"] {
+            margin: 10px 0;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .result {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Upload an Image for Prediction</h1>
+        <input type="file" id="imageInput" accept="image/*">
+        <br>
+        <input type="number" id="heightInput" placeholder="Enter your height (cm)" min="0">
+        <br>
+        <input type="number" id="bmiInput" placeholder="Enter your BMI" min="0" step="0.1">
+        <br>
+        <button onclick="predictImage()">Predict</button>
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        async function predictImage() {
+            const imageInput = document.getElementById('imageInput');
+            const heightInput = document.getElementById('heightInput');
+            const bmiInput = document.getElementById('bmiInput');
+
+            if (imageInput.files.length === 0) {
+                alert('Please select an image file.');
+                return;
+            }
+
+            if (!heightInput.value) {
+                alert('Please enter your height.');
+                return;
+            }
+
+            if (!bmiInput.value) {
+                alert('Please enter your BMI.');
+                return;
+            }
+
+            const file = imageInput.files[0];
+            const formData = new FormData();
+            formData.append('image', file);
+            formData.append('height', heightInput.value);
+            formData.append('bmi', bmiInput.value);
+
+            try {
+                const response = await fetch('http://202.30.29.168:5000/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    document.getElementById('result').textContent = 'Prediction Result: ' + data.result;
+                } else {
+                    document.getElementById('result').textContent = 'Error: ' + data.error;
+                }
+            } catch (error) {
+                document.getElementById('result').textContent = 'Error: Unable to connect to the server. Please make sure the Flask server is running.';
+            }
+        }
+    </script>
+</body>
+</html>

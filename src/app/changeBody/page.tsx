@@ -170,7 +170,9 @@ const Changebody = () => {
     return (
         <DashboardLayout>
             <div>
+
                 <h1 style={headerStyles.introTitle}>오늘도 열심히 운동하셨군요! 💪</h1>
+
 
                 {calculatedData && (
                     <>
@@ -228,23 +230,24 @@ const Changebody = () => {
                 <h2 className={styles.h2Font}>운동 사진</h2>
 
                 <div>
-                    {Array.from({length: Math.ceil(visibleImages / 3)}).map((_, rowIndex) => (
+                    {Array.from({length: Math.ceil(visibleImages / 6)}).map((_, rowIndex) => (
                         <div key={rowIndex} className={styles.boxContainer}>
                             {userImages
-                                .slice(rowIndex * 3, rowIndex * 3 + 3)
+                                .slice(rowIndex * 6, rowIndex * 3 + 3)
                                 .map((image, index) => (
                                     <div key={index} className={styles.imageBox}>
                                         <img src={image} alt={`운동 사진 ${index}`} className={styles.image}/>
                                     </div>
                                 ))}
 
+
                             {/* 빈 박스 로직 */}
-                            {userImages.slice(rowIndex * 3, rowIndex * 3 + 3).length < 3 &&
-                                Array(3 - userImages.slice(rowIndex * 3, rowIndex * 3 + 3).length)
+                            {userImages.slice(rowIndex * 6, rowIndex * 6 + 6).length < 6 &&
+                                Array(3 - userImages.slice(rowIndex * 6, rowIndex * 6 + 6).length)
                                     .fill(0)
                                     .map((_, emptyIndex) => (
-                                        <div key={`empty-${rowIndex}-${emptyIndex}`} className={styles.imageBox}>
-                                            <span>사진을 첨부하세요</span>
+                                        <div key={`empty-${rowIndex}-${emptyIndex}`} >
+
                                         </div>
                                     ))}
                         </div>
@@ -255,12 +258,12 @@ const Changebody = () => {
                 <div className={styles.ButtonBox}>
                     {userImages.length > visibleImages ? (
                         <button
-                            onClick={() => setVisibleImages((prev) => prev + 3)} // "사진 더보기" 버튼
+                            onClick={() => setVisibleImages((prev) => prev + 6)} // "사진 더보기" 버튼
                             className={styles.moreButton}
                         >
                             사진 더보기...
                         </button>
-                    ) : visibleImages > 3 ? ( // 모든 사진이 표시된 경우 "접어두기" 버튼 활성화
+                    ) : visibleImages > 6 ? ( // 모든 사진이 표시된 경우 "접어두기" 버튼 활성화
                         <button
                             onClick={() => setVisibleImages(3)} // 초기 상태로 리셋
                             className={styles.collapseButton}
