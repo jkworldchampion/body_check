@@ -50,7 +50,7 @@ const ExercisePhotoPage = () => {
                 id: doc.id,
                 imageUrl: doc.data().imageUrl || "",
                 timestamp: doc.data().timestamp
-                    ? new Date(doc.data().timestamp.toMillis()).toLocaleString()
+                    ? new Date(doc.data().timestamp.toMillis()).toLocaleDateString()
                     : "알 수 없음",
             }));
             setUserImages(images);
