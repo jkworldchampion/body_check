@@ -52,6 +52,7 @@ const ImageUploader: React.FC = () => {
 
             if (response.ok) {
                 const data = await response.json();
+                console.log('서버 원본 데이터:',data.result);
 
                 setTimeout(() => {
                     setResult(data.result); // 결과 설정
