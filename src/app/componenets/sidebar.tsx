@@ -42,13 +42,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                             </Link>
                         </li>
                         <li className={styles.sidebarLists}>
-                            <button
-                                onClick={() => alert("다크모드 준비 중입니다!")}
-                                className="flex items-center"
-                            >
+                            <Link href="/exercisephoto" onClick={onClose}>
                                 <FaMoon className="mr-2" />
-                                다크모드
-                            </button>
+                                오운완! 운동기록 확인하기
+                            </Link>
                         </li>
                     </ul>
                 </nav>
