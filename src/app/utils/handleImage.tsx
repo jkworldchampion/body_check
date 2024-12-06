@@ -49,8 +49,8 @@ export default function HandleUpload() {
             cropping: true, // 업로드 전에 사용자가 자를 수 있는 옵션 추가
             transformation: [
                 {
-                    width: 500,
-                    height: 500,
+                    width: 800,
+                    height: 800,
                     crop: "fill",
                     gravity: "auto",
                 },
