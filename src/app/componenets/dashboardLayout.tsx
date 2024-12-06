@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Sidebar from "./sidebar";
 import Header from "./header";
 import styles from "./layout.module.css";
+import '../globals.css';
 import ProtectedRoute from "@/app/protectedRoute";
 
 interface DashboardLayoutProps {
