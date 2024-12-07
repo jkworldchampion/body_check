@@ -25,26 +25,32 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     <ul className={styles.sidebarList}>
                         <li className={styles.sidebarLists}>
                             <Link href="/dashboard" onClick={onClose}>
-                                <FaHome className="mr-2" />
-                                 운동기록 보기
+                                <FaHome className="mr-2"/>
+                                운동기록 보기
                             </Link>
                         </li>
                         <li className={styles.sidebarLists}>
                             <Link href="/changeBody" onClick={onClose}>
-                                <FaChartBar className="mr-2" />
+                                <FaChartBar className="mr-2"/>
                                 체형변화 사진 보기
                             </Link>
                         </li>
                         <li className={styles.sidebarLists}>
                             <Link href="/tracking" onClick={onClose}>
-                                <FaBicycle className="mr-2" />
+                                <FaBicycle className="mr-2"/>
                                 실시간 운동 트래킹
                             </Link>
                         </li>
                         <li className={styles.sidebarLists}>
                             <Link href="/exercisephoto" onClick={onClose}>
-                                <FaMoon className="mr-2" />
+                                <FaMoon className="mr-2"/>
                                 오운완! 운동기록 확인하기
+                            </Link>
+                        </li>
+                        <li className={styles.sidebarLists}>
+                            <Link href="/recordExericse" onClick={onClose}>
+                                <FaMoon className="mr-2"/>
+                                체형분석도와주세용
                             </Link>
                         </li>
                     </ul>
