@@ -186,7 +186,7 @@
             const weight = document.getElementById('weight').value;
 
             if (!userId || !weight) {
-                alert("운동을 시작하기 전에 User ID와 Weight를 입력해주세요.");
+                alert("운동을 시작하기 전에 User ID와 무게를 입력해주세요.");
                 return;
             }
 
@@ -196,7 +196,7 @@
             video.style.display = 'none';
             processedImage.style.display = 'block';
 
-            // 프레임 캡처를 위한 캔버스 미리 생성
+            // 프레임 캡처를 위한 캔버스 미리 생성 => 속도를 높이기 위해
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
 
@@ -207,7 +207,7 @@
                 canvas.height = video.videoHeight;
                 const context = canvas.getContext('2d');
                 context.drawImage(video, 0, 0, canvas.width, canvas.height);
-                const dataURL = canvas.toDataURL('image/jpeg', 0.7); // 압축률 85%
+                const dataURL = canvas.toDataURL('image/jpeg', 0.7); // 압축률 70%
                 const base64Image = dataURL.split(',')[1];
                 ws.send(JSON.stringify({ 
                     user_id: userId, 

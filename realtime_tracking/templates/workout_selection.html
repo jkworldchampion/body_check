@@ -19,29 +19,46 @@
         }
         h1 {
             color: #333;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
         }
         .button-group {
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 20px;
+            align-items: center;
         }
-        button {
+        .excercise-button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .excercise-button {
             padding: 15px 30px;
             font-size: 1.2em;
             color: #fff;
-            background-color: #000;
+            background-color: #000; /* 버튼 기본 색상 */
             border: none;
             border-radius: 5px;
             cursor: pointer;
             transition: background-color 0.3s ease;
             width: 200px;
         }
-        button:hover {
-            background-color: #0056b3;
+        .excercise-button:hover {
+            background-color: #0056b3; /* 버튼 호버 색상 */
         }
-        button:active {
-            background-color: #004080;
+        .excercise-button:active {
+            background-color: #004080; /* 버튼 활성화 색상 */
+        }
+        /* "Back to Home" 링크 스타일 */
+        .back-to-home {
+            font-size: 1em;
+            color: #007BFF;
+            text-decoration: none;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+        .back-to-home:hover {
+            color: #0056b3;
         }
     </style>
 </head>
@@ -49,9 +66,14 @@
     <h1>실시간 운동 트래킹🥋</h1>
     <h1>운동을 선택해주세요!</h1>
     <div class="button-group">
-        <button onclick="window.location.href='/video_feed/benchpress'">Bench Press💪</button>
-        <button onclick="window.location.href='/video_feed/squat'">Squat🏋️</button>
-        <button onclick="window.location.href='/video_feed/deadlift'">Deadlift🦵</button>
+        <div class="excercise-button-group">
+            <button class="excercise-button" onclick="window.location.href='/video_feed/benchpress'">벤치 프레스💪</button>
+            <button class="excercise-button" onclick="window.location.href='/video_feed/squat'">스쿼트🏋️</button>
+            <button class="excercise-button" onclick="window.location.href='/video_feed/deadlift'">데드리프트🦵</button>
+        </div>
+        <div>
+            <a class="back-to-home" href="http://202.30.29.168:3000">Back to Home</a>
+        </div>
     </div>
 </body>
 </html>

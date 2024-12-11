@@ -37,7 +37,7 @@ def calculate_angle(a, b, c):
     if angle > 180.0:
         angle = 360 - angle
 
-    print(f"Calculated angle: {angle}")  # 각도 로그 추가
+    # print(f"Calculated angle: {angle}")  # 각도 로그 추가
 
     return angle
 
@@ -133,11 +133,11 @@ async def websocket_endpoint(websocket: WebSocket, workout: str, user_id: str):
                             # 벤치프레스 카운터 로직
                             if angle > 160:
                                 state["stage"] = "down"
-                                print(f"벤치프레스 - 스테이지: down, 각도: {angle}")
+                                # print(f"벤치프레스 - 스테이지: down, 각도: {angle}")
                             if angle < 50 and state["stage"] == 'down':
                                 state["stage"] = "up"
                                 state["counter"] += 1
-                                print(f"벤치프레스 - 반복 증가: {state['counter']}")
+                                # print(f"벤치프레스 - 반복 증가: {state['counter']}")
 
                         # 다른 운동 유형별 로직도 유사하게 추가
                         elif workout_type == "squat":
@@ -152,11 +152,11 @@ async def websocket_endpoint(websocket: WebSocket, workout: str, user_id: str):
                             # 스쿼트 카운터 로직
                             if angle > 160:
                                 stage = "up"
-                                print(f"스쿼트 - 스테이지: up, 각도: {angle}")
+                                # print(f"스쿼트 - 스테이지: up, 각도: {angle}")
                             if angle < 90 and stage == 'up':
                                 stage = "down"
                                 counter += 1
-                                print(f"스쿼트 - 반복 증가: {counter}")
+                                # print(f"스쿼트 - 반복 증가: {counter}")
 
                         elif workout_type == "deadlift":
                             left_hip = [landmarks[mp_pose.PoseLandmark.LEFT_HIP.value].x,
@@ -170,11 +170,11 @@ async def websocket_endpoint(websocket: WebSocket, workout: str, user_id: str):
                             # 데드리프트 카운터 로직
                             if angle > 160:
                                 stage = "up"
-                                print(f"데드리프트 - 스테이지: up, 각도: {angle}")
+                                # print(f"데드리프트 - 스테이지: up, 각도: {angle}")
                             if angle < 90 and stage == 'up':
                                 stage = "down"
                                 counter += 1
-                                print(f"데드리프트 - 반복 증가: {counter}")
+                                # print(f"데드리프트 - 반복 증가: {counter}")
 
                     except Exception as e:
                         print(f"Error during processing landmarks: {e}")
@@ -350,11 +350,11 @@ async def websocket_endpoint(websocket: WebSocket, workout: str, user_id: str):
                             # 벤치프레스 카운터 로직
                             if angle > 160:
                                 state["stage"] = "down"
-                                print(f"벤치프레스 - 스테이지: down, 각도: {angle}")
+                                # print(f"벤치프레스 - 스테이지: down, 각도: {angle}")
                             if angle < 50 and state["stage"] == 'down':
                                 state["stage"] = "up"
                                 state["counter"] += 1
-                                print(f"벤치프레스 - 반복 증가: {state['counter']}")
+                                # print(f"벤치프레스 - 반복 증가: {state['counter']}")
 
                         # 다른 운동 유형별 로직도 유사하게 추가
 
